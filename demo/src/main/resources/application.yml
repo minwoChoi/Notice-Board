@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: securityTest
+  # 데이터베이스 설정
+  datasource:
+    url: jdbc:postgresql://localhost:5432/test-db
+    username: postgres
+    password: 0417
+    driver-class-name: org.postgresql.Driver
+  # JPA 설정
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+  # Redis 설정
+  data:
+    redis:
+      host: localhost
+      port: 6379 # redis 데이터베이스는 기본적으로 6379 포트 사용
+
+# JWT 설정
+# jwt:
+#   secret: ${JWT_SECRET_KEY}
+  
+# 로그 설정
+logging:
+  level:
+    org:
+      springframework: info
+      zerock: debug
