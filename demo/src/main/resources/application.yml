@@ -22,9 +22,9 @@ spring:
       port: 6379 # redis 데이터베이스는 기본적으로 6379 포트 사용
 
 # JWT 설정
-# jwt:
-#   secret: ${JWT_SECRET_KEY}
-  
+jwt:
+  secret: ksdf98asjkdln9081u9023ndfoiqwernvsdfiu23ndf8923
+
 # 로그 설정
 logging:
   level:
