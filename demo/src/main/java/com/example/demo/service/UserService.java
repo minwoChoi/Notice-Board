@@ -3,6 +3,7 @@ package com.example.demo.service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.dto.user.requset.UserEditRequset;
 import com.example.demo.dto.user.requset.UserReisterRequest;
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
@@ -14,6 +15,22 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserRepository userRepository;  
+
+    //프로필수정
+    public void editProfile(String userId, UserEditRequset editRequest) {
+    User user = userRepository.findByUserId(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("회원이 존재하지 않습니다."));
+
+    // null이 아닌 값만 업데이트
+    if (editRequest.getPassword() != null) user.setPassword(passwordEncoder.encode(editRequest.getPassword()));
+    if (editRequest.getEmail() != null) user.setEmail(editRequest.getEmail());
+    if (editRequest.getName() != null) user.setName(editRequest.getName());
+    if (editRequest.getPhoneNumber() != null) user.setPhoneNumber(editRequest.getPhoneNumber());
+    if (editRequest.getNickname() != null) user.setNickname(editRequest.getNickname());
+    if (editRequest.getProfilePicture() != null) user.setProfilePicture(editRequest.getProfilePicture());
+
+    userRepository.save(user);
+}
 
     //회원가입
     public void register(UserReisterRequest request) {   
@@ -43,4 +60,5 @@ public class UserService {
         //저장
         userRepository.save(user);
     }
+
 }

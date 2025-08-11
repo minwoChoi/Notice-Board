@@ -11,6 +11,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+
 import org.springframework.stereotype.Component;
 import com.example.demo.repository.RedisDao;
 
@@ -30,8 +31,8 @@ public class JwtTokenProvider {
     private final RedisDao redisDao; // RefreshToken 저장을 위해 Redis 사용
 
     private static final String GRANT_TYPE = "Bearer";
-    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60; // 1분
-    private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 3; // 3일
+    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60; // 60분
+    private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 ; // 1일
 
     // application.properties에서 secret 값 가져와서 secretKey 사용하기
     public JwtTokenProvider(@Value("${jwt.secret}") String secretKey,
@@ -43,6 +44,7 @@ public class JwtTokenProvider {
 
     // Member 정보를 가지고 AccessToken, RefreshToken을 생성하기
     public JwtToken generateToken(Authentication authentication) {
+        //권하 거자요기
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
@@ -102,6 +104,10 @@ public class JwtTokenProvider {
         if (claims.get("auth") == null) {
             throw new RuntimeException("권한 정보가 없는 토큰입니다.");
         }
+        
+        //SimpleGrantedAuthority 객체로 변환
+        //(Spring Security에서 권한을 표현하는 기본 클래스)
+         
 
         Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth").toString().split(","))
                 .map(SimpleGrantedAuthority::new)
