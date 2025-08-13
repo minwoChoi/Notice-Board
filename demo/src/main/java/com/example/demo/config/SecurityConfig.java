@@ -26,54 +26,61 @@ import com.example.demo.global.security.jwt.JwtTokenProvider;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtTokenProvider jwtTokenProvider;
+	private final JwtTokenProvider jwtTokenProvider;
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity httpSecurity, HandlerMappingIntrospector introspector) throws Exception {
-        // permitAll 경로 배열 생성
-        MvcRequestMatcher.Builder mvc = new MvcRequestMatcher.Builder(introspector);
-        MvcRequestMatcher[] permitAllList = {
-            mvc.pattern("/auth/login"),
-            mvc.pattern("/swagger-ui/**"),
-            mvc.pattern("/v3/api-docs/**")
-        };
+	@Bean
+	public SecurityFilterChain filterChain(HttpSecurity httpSecurity, HandlerMappingIntrospector introspector) throws Exception {
+		// permitAll 경로 배열 생성
+		MvcRequestMatcher.Builder mvc = new MvcRequestMatcher.Builder(introspector);
+		MvcRequestMatcher[] permitAllList = {
+			mvc.pattern("/auth/login"),
+			// Swagger UI 및 OpenAPI 문서 경로 허용
+			mvc.pattern("/swagger-ui/**"),
+			mvc.pattern("/swagger-ui.html"),
+			mvc.pattern("/v3/api-docs/**"),
+			mvc.pattern("/api-docs/**")
+		};
 
-        httpSecurity
-            .httpBasic(AbstractHttpConfigurer::disable)
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> {})
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .formLogin(AbstractHttpConfigurer::disable)
-            .logout(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(authorize ->
-                authorize
-                    .requestMatchers(permitAllList).permitAll()   // 배열로 전달
-                    .requestMatchers(HttpMethod.POST, "/users/").permitAll()
-                    .requestMatchers(HttpMethod.DELETE, "/user").hasRole("ADMIN")
-                    .requestMatchers("/members/role").hasRole("USER")
-                    .anyRequest().authenticated()
-            )
-            .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+		httpSecurity
+			.httpBasic(AbstractHttpConfigurer::disable)
+			.csrf(AbstractHttpConfigurer::disable)
+			.cors(cors -> {})
+			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			.formLogin(AbstractHttpConfigurer::disable)
+			.logout(AbstractHttpConfigurer::disable)
+			.authorizeHttpRequests(authorize ->
+				authorize
+					.requestMatchers(permitAllList).permitAll()   // 배열로 전달
+					.requestMatchers(HttpMethod.POST, "/users/").permitAll()
+					.requestMatchers(HttpMethod.DELETE, "/user").hasRole("ADMIN")
+					.requestMatchers("/members/role").hasRole("USER")
+					
+					.requestMatchers(HttpMethod.GET, "/users/checkId").permitAll()
+					.requestMatchers(HttpMethod.GET, "/users/checkNickname").permitAll()
 
-        return httpSecurity.build();
-    }
+					.anyRequest().authenticated()
+			)
+			.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+		return httpSecurity.build();
+	}
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOriginPattern("http://localhost:3000");
-        configuration.addAllowedOriginPattern("http://127.0.0.1:3000");
-        configuration.addAllowedHeader("*");
-        configuration.addAllowedMethod("*");
-        configuration.setAllowCredentials(true);
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
+	@Bean
+	public CorsConfigurationSource corsConfigurationSource() {
+		CorsConfiguration configuration = new CorsConfiguration();
+		configuration.addAllowedOriginPattern("http://localhost:3000");
+		configuration.addAllowedOriginPattern("http://127.0.0.1:3000");
+		configuration.addAllowedHeader("*");
+		configuration.addAllowedMethod("*");
+		configuration.setAllowCredentials(true);
+
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", configuration);
+		return source;
+	}
 }

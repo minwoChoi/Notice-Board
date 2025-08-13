@@ -29,10 +29,10 @@ public class UserController {
     // 생성자에서 세 필드 모두 초기화
     public UserController(
         AuthService userAuthService,
-    UserService userService,
-    UserRepository userRepository,
-    PasswordEncoder passwordEncoder)
-     {
+        UserService userService,
+        UserRepository userRepository,
+        PasswordEncoder passwordEncoder
+        ){
         this.userAuthService = userAuthService;
         this.userService = userService;
         this.userRepository = userRepository;
@@ -49,34 +49,6 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         }
     }
-
-
-    // @GetMapping("/me")
-    // public ResponseEntity<?> getMyInfo(@RequestHeader("Authorization") String token) {
-    //     // 토큰에서 userId 추출(JWT나 세션 방식에 따라 다름)
-    //     String userId = "testuser1";
-    //     //userAuthService.extractUserIdFromToken(token);
-    //     // 유저 정보 조회
-    //     var userInfo = userAuthService.getUserInfo(userId);
-    //     if (userInfo == null) {
-    //         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("해당 유저를 찾을 수 없습니다.");
-    //     }
-    //     return ResponseEntity.ok(userInfo);
-    // }
-
-    // @GetMapping("/me")
-    // public ResponseEntity<?> getMyInfo() {
-    //     // JWTAuthenticationFilter에서 이미 인증 성공 상태로 SecurityContext에 저장됨
-    //     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    //     String userId = authentication.getName(); // 토큰의 subject 값 == userId
-    //     log.info("userId: {}", userId); 
-    //     var userInfo = userAuthService.getUserInfo(userId);
-    //     if (userInfo == null) {
-    //         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-    //                             .body("해당 유저(" + userId + ")를 찾을 수 없습니다.");
-    //     }
-    //     return ResponseEntity.ok(userInfo);
-    // }
 
     @GetMapping("/me")
     public ResponseEntity<?> getMyInfo() {
