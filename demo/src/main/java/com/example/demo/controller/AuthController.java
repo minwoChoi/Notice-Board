@@ -51,7 +51,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
 
-        // 3) Authentication 객체 만들기 (권한 세팅)
+        // 3) Authentication 객체 만들기 -> 권한 세팅
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(
                         user.getUserId(),

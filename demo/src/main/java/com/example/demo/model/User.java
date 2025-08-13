@@ -13,7 +13,7 @@ import lombok.Setter;
 @Table(name = "users")
 public class User {
     @Id
-    @Column(name = "user_id")  // DB 컬럼명 매핑
+    @Column(name = "user_id")
     private String userId;
 
     @Column(name = "password")

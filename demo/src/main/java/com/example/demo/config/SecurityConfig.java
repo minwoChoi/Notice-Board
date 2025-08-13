@@ -14,6 +14,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.example.demo.global.security.jwt.JwtAuthenticationFilter;
 import com.example.demo.global.security.jwt.JwtTokenProvider;
@@ -31,21 +34,21 @@ public class SecurityConfig {
         MvcRequestMatcher.Builder mvc = new MvcRequestMatcher.Builder(introspector);
         MvcRequestMatcher[] permitAllList = {
             mvc.pattern("/auth/login"),
-            mvc.pattern("/auth/register"),
             mvc.pattern("/swagger-ui/**"),
-            mvc.pattern("/v3/api-docs/**"),
-            mvc.pattern("/users/*")
+            mvc.pattern("/v3/api-docs/**")
         };
 
         httpSecurity
             .httpBasic(AbstractHttpConfigurer::disable)
             .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> {})
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .formLogin(AbstractHttpConfigurer::disable)
             .logout(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(authorize ->
                 authorize
                     .requestMatchers(permitAllList).permitAll()   // 배열로 전달
+                    .requestMatchers(HttpMethod.POST, "/users/").permitAll()
                     .requestMatchers(HttpMethod.DELETE, "/user").hasRole("ADMIN")
                     .requestMatchers("/members/role").hasRole("USER")
                     .anyRequest().authenticated()
@@ -58,5 +61,19 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.addAllowedOriginPattern("http://localhost:3000");
+        configuration.addAllowedOriginPattern("http://127.0.0.1:3000");
+        configuration.addAllowedHeader("*");
+        configuration.addAllowedMethod("*");
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

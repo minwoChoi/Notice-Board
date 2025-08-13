@@ -39,7 +39,8 @@ public class UserController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    @PostMapping("/register")
+    //회원가입
+    @PostMapping("/")
     public ResponseEntity<String> register(@RequestBody UserReisterRequest request) {
         try {
             userAuthService.register(request);
