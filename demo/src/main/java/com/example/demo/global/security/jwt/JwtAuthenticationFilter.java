@@ -8,6 +8,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
+import jakarta.servlet.http.Cookie;
+
 
 // 클라이언트 요청시 JWT 인증을 하기 위해 설치하는 커스텀 필터
 // UsernamePasswordAuthenticationFilter 이전에 실행
@@ -33,12 +35,16 @@ public class JwtAuthenticationFilter extends GenericFilter {
 		chain.doFilter(request, response);
 	}
 
-	// Request Header에서 JWT 토큰 추출
 	private String resolveToken(HttpServletRequest request) {
-		String bearerToken = request.getHeader("Authorization");
-		if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-			return bearerToken.substring(7); // "Bearer " 이후만 넘기기
+		// 1) 쿠키에서 토큰 추출
+		if (request.getCookies() != null) {
+			for (Cookie cookie : request.getCookies()) {
+				if ("accessToken".equals(cookie.getName())) { // 쿠키 이름이 accessToken인 경우
+					return cookie.getValue();
+				}
+			}
 		}
 		return null;
 	}
+	
 }

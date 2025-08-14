@@ -11,7 +11,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-
 import org.springframework.stereotype.Component;
 import com.example.demo.repository.RedisDao;
 
@@ -30,21 +29,20 @@ public class JwtTokenProvider {
     private final Key key;
     private final RedisDao redisDao; // RefreshToken 저장을 위해 Redis 사용
 
-    private static final String GRANT_TYPE = "Bearer";
-    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60; // 60분
-    private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 ; // 1일
+    public static final String GRANT_TYPE = "Bearer"; // 컨트롤러에서도 재사용 가능
+    public static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60; // 60분
+    public static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24; // 1일
 
-    // application.properties에서 secret 값 가져와서 secretKey 사용하기
     public JwtTokenProvider(@Value("${jwt.secret}") String secretKey,
                             RedisDao redisDao) {
+        // 안전한 방식으로 Base64 디코딩
         byte[] keyBytes = Base64.getEncoder().encode(secretKey.getBytes());
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.redisDao = redisDao;
     }
 
-    // Member 정보를 가지고 AccessToken, RefreshToken을 생성하기
+    /** 로그인 시 토큰 생성 (AccessToken + Redis에 RefreshToken 저장) */
     public JwtToken generateToken(Authentication authentication) {
-        //권하 거자요기
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
@@ -56,25 +54,23 @@ public class JwtTokenProvider {
         Date accessTokenExpire = new Date(now + ACCESS_TOKEN_EXPIRE_TIME);
         String accessToken = generateAccessToken(username, authorities, accessTokenExpire);
 
-        // RefreshToken 생성
+        // RefreshToken 생성 & Redis 저장
         Date refreshTokenExpire = new Date(now + REFRESH_TOKEN_EXPIRE_TIME);
         String refreshToken = generateRefreshToken(username, refreshTokenExpire);
-
-        // Redis에 RefreshToken 넣기
         redisDao.setValues(username, refreshToken, Duration.ofMillis(REFRESH_TOKEN_EXPIRE_TIME));
 
+        // RefreshToken은 절대 응답에 포함하지 않음
         return JwtToken.builder()
                 .grantType(GRANT_TYPE)
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
                 .build();
     }
 
-    // AccessToken & RefreshToken 재발급 할 때 (UserDetailsService를 파라미터로 받음)
+    /** 재발급 시 (Rotation 정책 적용: RefreshToken도 새로 발급) */
     public JwtToken generateTokenWithRefreshToken(String username, UserDetailsService userDetailsService) {
         long now = (new Date()).getTime();
 
-        // UserDetailsService로 사용자 권한 정보 가져오기
+        // 권한 정보 조회
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         String authorities = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -84,30 +80,24 @@ public class JwtTokenProvider {
         Date accessTokenExpire = new Date(now + ACCESS_TOKEN_EXPIRE_TIME);
         String accessToken = generateAccessToken(username, authorities, accessTokenExpire);
 
-        // RefreshToken 생성
+        // RefreshToken 생성 & Redis에 저장
         Date refreshTokenExpire = new Date(now + REFRESH_TOKEN_EXPIRE_TIME);
         String refreshToken = generateRefreshToken(username, refreshTokenExpire);
-
-        // Redis에 RefreshToken 넣기
         redisDao.setValues(username, refreshToken, Duration.ofMillis(REFRESH_TOKEN_EXPIRE_TIME));
 
+        // 여기서도 RefreshToken은 응답에 포함하지 않음
         return JwtToken.builder()
                 .grantType(GRANT_TYPE)
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
                 .build();
     }
 
-    // JWT 토큰을 복호화하여 토큰에 들어있는 정보 꺼내기
+    /** AccessToken으로 Authentication 생성 */
     public Authentication getAuthentication(String accessToken) {
         Claims claims = parseClaims(accessToken);
         if (claims.get("auth") == null) {
             throw new RuntimeException("권한 정보가 없는 토큰입니다.");
         }
-        
-        //SimpleGrantedAuthority 객체로 변환
-        //(Spring Security에서 권한을 표현하는 기본 클래스)
-         
 
         Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth").toString().split(","))
                 .map(SimpleGrantedAuthority::new)
@@ -117,7 +107,7 @@ public class JwtTokenProvider {
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
 
-    // JWT 토큰 복호화
+    /** JWT 파싱 */
     private Claims parseClaims(String accessToken) {
         try {
             return Jwts.parserBuilder()
@@ -130,7 +120,7 @@ public class JwtTokenProvider {
         }
     }
 
-    // 토큰 정보 검증
+    /** Access/Refresh 토큰 형식과 서명 검증 */
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -150,20 +140,13 @@ public class JwtTokenProvider {
         return false;
     }
 
-    // RefreshToken 검증
-    public boolean validateRefreshToken(String token) {
-        if (!validateToken(token)) return false;
-        try {
-            String username = getUserNameFromToken(token);
-            String redisToken = (String) redisDao.getValues(username);
-            return token.equals(redisToken);
-        } catch (Exception e) {
-            log.info("RefreshToken Validation Failed", e);
-            return false;
-        }
+    /** RefreshToken 검증 (username 기반, 클라이언트에서 전달 안 함) */
+    public boolean validateRefreshTokenByUsername(String username) {
+        String redisToken = (String) redisDao.getValues(username);
+        return redisToken != null && validateToken(redisToken);
     }
 
-    // 토큰에서 username 추출
+    /** 토큰에서 username 추출 */
     public String getUserNameFromToken(String token) {
         try {
             Claims claims = Jwts.parserBuilder()
@@ -177,7 +160,7 @@ public class JwtTokenProvider {
         }
     }
 
-    // RefreshToken 삭제
+    /** RefreshToken 삭제 */
     public void deleteRefreshToken(String username) {
         if (username == null || username.trim().isEmpty()) {
             throw new IllegalArgumentException("Username cannot be null or empty");
@@ -185,19 +168,22 @@ public class JwtTokenProvider {
         redisDao.deleteValues(username);
     }
 
-    // 토큰 생성 함수들
+    /** AccessToken 생성 */
     private String generateAccessToken(String username, String authorities, Date expireDate) {
         return Jwts.builder()
                 .setSubject(username)
                 .claim("auth", authorities)
+                .setIssuedAt(new Date())
                 .setExpiration(expireDate)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
+    /** RefreshToken 생성 */
     private String generateRefreshToken(String username, Date expireDate) {
         return Jwts.builder()
                 .setSubject(username)
+                .setIssuedAt(new Date())
                 .setExpiration(expireDate)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();

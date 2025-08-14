@@ -31,3 +31,17 @@ logging:
     org:
       springframework: info
       zerock: debug
+
+# Swagger 설정
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    config-url: /api-docs/swagger-config
+    url: /api-docs
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
+
+  
