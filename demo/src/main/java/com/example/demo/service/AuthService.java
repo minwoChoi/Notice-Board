@@ -4,8 +4,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.repository.UserRepository;
-import com.example.demo.dto.user.requset.UserReisterRequest;
 import com.example.demo.model.User;
+import com.example.demo.dto.user.request.UserReisterRequest;
 import com.example.demo.dto.user.response.UserInfoResponse;
 
 import lombok.RequiredArgsConstructor;

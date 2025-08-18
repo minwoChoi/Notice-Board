@@ -18,7 +18,7 @@ import com.example.demo.repository.UserRepository;
 
 import jakarta.servlet.http.HttpServletResponse;
 
-import com.example.demo.dto.user.requset.UserLoginRequset;
+import com.example.demo.dto.user.request.UserLoginRequset;
 import com.example.demo.dto.user.response.UserLoginResponse;
 import com.example.demo.model.User;
 import com.example.demo.global.security.jwt.JwtToken;
