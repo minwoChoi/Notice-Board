@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Table(name =  "post")
 public class Post {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "post_id")
     private int postId;
 

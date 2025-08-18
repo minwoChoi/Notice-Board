@@ -1,20 +1,21 @@
 package com.example.demo.controller;
 
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-import com.example.demo.repository.PostRepository;
-
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import com.example.demo.model.Post;
+import com.example.demo.repository.PostRepository;
+import com.example.demo.service.PostService;
 
 
 @RestController
@@ -22,9 +23,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class PostController {
 
     private final PostRepository postRepository;
+    private final PostService postService;
     
-    public PostController(PostRepository postRepository) {
+    public PostController(PostRepository postRepository, PostService postService) {
         this.postRepository = postRepository;
+        this.postService = postService;
     }
     //GET
     @GetMapping("/")
@@ -43,12 +46,17 @@ public class PostController {
     }
     
     //POST
-    @PostMapping("path")
-    public String createPost(@RequestBody String entity) {
-        //TODO: process POST request
-        
-        return entity;
+    @PostMapping("/")
+    public ResponseEntity<Post> createPost(@RequestBody Post post, Authentication authentication) {
+        // Authentication에서 username 추출 (일반적으로 getName() 사용)
+        String username = authentication.getName();
+
+        // 서비스로 위임하여 Post 생성 처리
+        Post savedPost = postService.createPost(post, username);
+
+        return new ResponseEntity<>(savedPost, HttpStatus.CREATED);
     }
+
     
     @PutMapping("/{id}")
     public String updatePost(@PathVariable Long id) {
