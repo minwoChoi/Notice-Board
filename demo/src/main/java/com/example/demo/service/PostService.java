@@ -14,19 +14,17 @@ import com.example.demo.repository.PostLikeRepository;
 import com.example.demo.repository.PostRepository;
 import com.example.demo.repository.UserRepository;
 
+import lombok.AllArgsConstructor;
+
 @Service
+@AllArgsConstructor
 public class PostService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final PostLikeRepository postLikeRepository;
 
-    public PostService(PostRepository postRepository, UserRepository userRepository, PostLikeRepository postLikeRepository) {
-        this.postRepository = postRepository;
-        this.userRepository = userRepository;
-        this.postLikeRepository = postLikeRepository;
-    }
-
+    //게시글 작성
     @Transactional
     public Post createPost(Post post, String userId) {
         // userId로 User 조회, 없으면 예외 발생
@@ -46,7 +44,7 @@ public class PostService {
     }
 
     @Transactional
-    public Post updatePost(int postId, PostEditRequest request, String username) {
+    public Post updatePost(Long postId, PostEditRequest request, String username) {
         // 1. 게시글 조회 (없으면 예외)
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new IllegalArgumentException("Post not found: " + postId));
@@ -67,7 +65,7 @@ public class PostService {
     }
 
     @Transactional
-    public void deletePost(int postId, String username) {
+    public void deletePost(Long postId, String username) {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new IllegalArgumentException("Post not found: " + postId));
 
@@ -83,7 +81,7 @@ public class PostService {
         return postRepository.findAll();
     }
     
-    public Post findPostById(int postId, String username) {
+    public Post findPostById(Long postId, String username) {
         Post post = postRepository.findById(postId)
         .orElseThrow(() -> new IllegalArgumentException("Post not found with id: " + postId));
 
@@ -92,10 +90,10 @@ public class PostService {
     }
 
     @Transactional
-    public void likePost(int postId, String userId) {
+    public void likePost(Long postId, String userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
-                User user = userRepository.findByUserId(userId)
+        User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         // 이미 좋아요 눌렀는지 체크
@@ -116,7 +114,7 @@ public class PostService {
     }
 
     @Transactional
-    public void unlikePost(int postId, String userId) {
+    public void unlikePost(Long postId, String userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
        User user = userRepository.findByUserId(userId)

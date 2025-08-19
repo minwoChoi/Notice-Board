@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PostCreatRequest {
+public class PostCreateRequest {
     
     private String category;
 

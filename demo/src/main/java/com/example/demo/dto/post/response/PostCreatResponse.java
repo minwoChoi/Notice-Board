@@ -7,16 +7,15 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PostListResponse {
+public class PostCreatResponse {
     private Long postId;
     private String category;
     private String title;
     private String content;
     private String photo;
-    private String nickname; 
+    private String nickname;
     private LocalDateTime createdDate;
     private int likeCount;
     private int viewCount;
-}
 
-// 마이바티스
+}

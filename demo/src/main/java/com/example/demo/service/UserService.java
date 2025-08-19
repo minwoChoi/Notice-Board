@@ -5,18 +5,14 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.user.request.UserEditRequset;
 import com.example.demo.dto.user.request.UserReisterRequest;
-import com.example.demo.model.Post;
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
-import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
-    private final PostRepository postRepository;
     
 
     //프로필수정
@@ -63,6 +59,5 @@ public class UserService {
         //저장
         userRepository.save(user);
     }
-
 
 }

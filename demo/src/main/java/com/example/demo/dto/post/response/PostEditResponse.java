@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class PostEditResponse {
-    private int postId;          // 게시글 고유 ID
+    private Long postId;          // 게시글 고유 ID
     private String category;      // 카테고리
     private String title;         // 제목
     private String content;       // 내용
