@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.dto.post.request.PostEditRequest;
 import com.example.demo.model.Post;
+import com.example.demo.model.PostLike;
 import com.example.demo.model.User;
 import com.example.demo.repository.PostLikeRepository;
 import com.example.demo.repository.PostRepository;
@@ -88,5 +89,47 @@ public class PostService {
 
         return post;
 
+    }
+
+    @Transactional
+    public void likePost(int postId, String userId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+                User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // 이미 좋아요 눌렀는지 체크
+        boolean alreadyLiked = postLikeRepository.existsByPostAndUser(post, user);
+        if (alreadyLiked) {
+            throw new IllegalStateException("이미 추천한 게시글입니다.");
+        }
+
+        // 새 좋아요 저장
+        PostLike like = new PostLike();
+        like.setPost(post);
+        like.setUser(user);
+        postLikeRepository.save(like);
+
+        // 게시글 likeCount +1
+        post.increaseLikeCount();
+        postRepository.save(post);
+    }
+
+    @Transactional
+    public void unlikePost(int postId, String userId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+       User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+
+        PostLike like = postLikeRepository.findByPostAndUser(post, user)
+                .orElseThrow(() -> new IllegalArgumentException("추천하지 않은 게시글입니다."));
+
+        postLikeRepository.delete(like);
+
+        // 게시글 likeCount -1
+        post.decreaseLikeCount();
+        postRepository.save(post);
     }
 }

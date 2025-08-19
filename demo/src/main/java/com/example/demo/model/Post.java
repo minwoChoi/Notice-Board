@@ -39,4 +39,14 @@ public class Post {
 
     @Column(name = "created_date")
     private LocalDateTime createdDate; 
+
+    public void increaseLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decreaseLikeCount() {
+        if (this.likeCount > 0) {
+            this.likeCount--;
+        }
+    }
 }

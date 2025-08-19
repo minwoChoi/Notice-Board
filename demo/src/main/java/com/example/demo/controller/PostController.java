@@ -132,16 +132,19 @@ public class PostController {
     
     
     @PostMapping("/{id}/like")
-    public String likePost(@PathVariable Long id) {
-        // 게시글 추천
-        return "";
+    public ResponseEntity<Void> likePost(@PathVariable int id, Authentication authentication) {
+        String username = authentication.getName();
+        postService.likePost(id, username);
+        return ResponseEntity.ok().build();
     }
-
+    
     @DeleteMapping("/{id}/like")
-    public String unlikePost(@PathVariable Long id) {
-        // 게시글 추천 취소
-        return "";
+    public ResponseEntity<Void> unlikePost(@PathVariable int id, Authentication authentication) {
+        String username = authentication.getName();
+        postService.unlikePost(id, username);
+        return ResponseEntity.ok().build();
     }
+    
 
 
 

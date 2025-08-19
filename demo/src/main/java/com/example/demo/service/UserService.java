@@ -17,6 +17,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final PostRepository postRepository;
+    
 
     //프로필수정
     public void editProfile(String userId, UserEditRequset editRequest) {
