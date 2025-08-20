@@ -73,6 +73,7 @@ public class PostController {
 
         return ResponseEntity.ok(responseList);
     }
+    
     //게시글 작성
     @PostMapping("/")
     public ResponseEntity<PostListResponse> createPost(
@@ -106,7 +107,6 @@ public class PostController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
         }
     
-
     //게시글 수정
     @PatchMapping("/{id}")
     public ResponseEntity<PostEditResponse> updatePost(

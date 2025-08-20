@@ -43,6 +43,7 @@ public class PostService {
         return postRepository.save(post);
     }
 
+    //게시물 수정
     @Transactional
     public Post updatePost(Long postId, PostEditRequest request, String username) {
         // 1. 게시글 조회 (없으면 예외)
@@ -64,6 +65,7 @@ public class PostService {
         return postRepository.save(post);
     }
 
+    //게시물 삭제
     @Transactional
     public void deletePost(Long postId, String username) {
         Post post = postRepository.findById(postId)
@@ -77,18 +79,20 @@ public class PostService {
         postRepository.delete(post);
 }
 
+    //전체 게시물 조회
     public List<Post> findAllPosts() {
         return postRepository.findAll();
     }
     
+    //게시물 상세 조회
     public Post findPostById(Long postId, String username) {
         Post post = postRepository.findById(postId)
         .orElseThrow(() -> new IllegalArgumentException("Post not found with id: " + postId));
-
         return post;
 
     }
 
+    //게시물 추천
     @Transactional
     public void likePost(Long postId, String userId) {
         Post post = postRepository.findById(postId)
@@ -113,11 +117,12 @@ public class PostService {
         postRepository.save(post);
     }
 
+    //게시물 추천 취소
     @Transactional
     public void unlikePost(Long postId, String userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
-       User user = userRepository.findByUserId(userId)
+        User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
 

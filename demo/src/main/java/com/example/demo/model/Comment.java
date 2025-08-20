@@ -4,10 +4,10 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDateTime;
-
+import java.util.List;
+@Entity
 @Getter
 @Setter
-@Entity
 @Table(name = "comment")
 public class Comment {
 
@@ -32,5 +32,16 @@ public class Comment {
 
     @Column(name = "created_date")
     private LocalDateTime createdDate;
-}
 
+    // 좋아요 연관매핑
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<CommentLike> likes;
+
+    public void increaseLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decreaseLikeCount() {
+        if (this.likeCount > 0) this.likeCount--;
+    }
+}

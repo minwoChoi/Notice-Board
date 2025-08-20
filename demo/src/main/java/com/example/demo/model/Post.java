@@ -4,12 +4,13 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDateTime;
-
+import java.util.List;
+@Entity
 @Getter
 @Setter
-@Entity
-@Table(name =  "post")
+@Table(name = "post")
 public class Post {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "post_id")
@@ -24,13 +25,13 @@ public class Post {
 
     @Column(name = "title")
     private String title;
-    
+
     @Column(name = "content")
     private String content;
 
     @Column(name = "photo")
     private String photo;
-    
+
     @Column(name = "like_count")
     private int likeCount;
 
@@ -38,15 +39,16 @@ public class Post {
     private int viewCount;
 
     @Column(name = "created_date")
-    private LocalDateTime createdDate; 
+    private LocalDateTime createdDate;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<PostLike> likes;
 
     public void increaseLikeCount() {
         this.likeCount++;
     }
 
     public void decreaseLikeCount() {
-        if (this.likeCount > 0) {
-            this.likeCount--;
-        }
+        if (this.likeCount > 0) this.likeCount--;
     }
 }

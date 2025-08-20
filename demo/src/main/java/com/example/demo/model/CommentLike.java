@@ -1,30 +1,29 @@
 package com.example.demo.model;
 
+import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Getter
 @Setter
-@Table(name = "post_likes")
-public class PostLike {
+@Table(name = "comment_likes")
+public class CommentLike {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "post_like_id")
-    private Long postLikeId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id")
-    private Post post;
+    @Column(name = "comment_like_id")
+    private Long commentLikeId;  // 변수명 카멜케이스
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "comment_id")
+    private Comment comment;
 
     @Column(name = "created_date")
     private LocalDateTime createdDate = LocalDateTime.now();

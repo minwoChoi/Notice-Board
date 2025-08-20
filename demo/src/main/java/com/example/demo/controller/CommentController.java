@@ -6,8 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.demo.dto.comment.request.CommentCreateRequest;
 import com.example.demo.model.Comment;
 
-import java.net.Authenticator;
-
+import java.util.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
@@ -31,13 +29,23 @@ import org.springframework.web.bind.annotation.PathVariable;
 public class CommentController {
 
     private final CommentService commentService;
+
     // 댓글 목록 조회 (특정 게시글의 댓글들)
     @GetMapping("/{postId}/comments")
-    public String getCommentList(@PathVariable Long postId, Authenticator authenticator) {
-
-        return "";
+    public ResponseEntity<List<CommentResponse>> getAllCommentList(@PathVariable Long postId, Authentication authentication) {
+        List<CommentResponse> commentList = commentService.getCommentsByPostId(postId);
+        return ResponseEntity.ok(commentList);
     }
 
+    // //특정 Id의 댓글 목록 조회
+    // @GetMapping("/users/{userId}/comments")
+    // public ResponseEntity<List<CommentResponse>> getCommentsByUser(
+    //     @PathVariable String userId) {
+    //     List<CommentResponse> commentList = commentService.getCommentsByUserId(userId);
+    //     return ResponseEntity.ok(commentList);
+    // }
+    
+    // 댓글 작성
     @PostMapping("/{id}/comments")
     public ResponseEntity<CommentResponse> createComment(
             @PathVariable("id") Long postId,
@@ -70,9 +78,9 @@ public class CommentController {
             @PathVariable Long commentId,
             @RequestBody CommentEditRequest commentEditRequest,
             Authentication authentication) {
-    
+
         String username = authentication.getName();
-    
+
         Comment updatedComment = commentService.updateComment(postId, commentId, commentEditRequest, username);
 
         CommentResponse response = new CommentResponse();
@@ -82,27 +90,40 @@ public class CommentController {
         response.setProfilePicture(updatedComment.getUser().getProfilePicture());
         response.setLikeCount(updatedComment.getLikeCount());
         response.setCreatedDate(updatedComment.getCreatedDate().toString()); // or 포맷팅
-    
+
         return ResponseEntity.ok(response);
     }
+
+    //댓글 삭제
+    @DeleteMapping("/{postId}/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId, Authentication authentication) {
+        String username = authentication.getName();
+        commentService.deleteComment(commentId, username);
+        return ResponseEntity.noContent().build();
+    }
+
+    //댓글 추천
+    @PostMapping("/{postId}/comments/{commentId}/likes")
+    public ResponseEntity<Void> likeComment(
+        @PathVariable  Long commentId,
+        @PathVariable  Long postId,
+        Authentication authentication) {
+
+        String username = authentication.getName();
+        commentService.likeComment(commentId, postId, username);
     
-
-    // 댓글 삭제
-    @DeleteMapping("/{id}/comments/{Id}")
-    public String deleteComment(@PathVariable Long commentId) {
-        return "";
+        return ResponseEntity.ok().build();
     }
-
-    // 댓글 추천
-    @PostMapping("{postId}/comments/{commentId}/likes")
-    public String likeComment(@PathVariable Long commentId) {
-        return "";
-    }
-
-    // 댓글 추천 취소
-    @DeleteMapping("{postId}/comments/{commentId}/likes")
-    public String unlikeComment(@PathVariable Long commentId) {
-        return "";
+    
+    //댓글 추천 삭제
+    @DeleteMapping("/{postId}/comments/{commentId}/likes")
+    public ResponseEntity<Void> unlikeComment(
+        @PathVariable  Long commentId,
+        @PathVariable  Long postId,
+        Authentication authentication) {
+        String username = authentication.getName();
+        commentService.unlikeComment(commentId, postId, username);
+        return ResponseEntity.ok().build();
     }
 
 }

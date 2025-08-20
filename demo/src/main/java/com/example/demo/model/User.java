@@ -7,11 +7,12 @@ import jakarta.persistence.Column;
 import lombok.Getter;
 import lombok.Setter;
 
+@Entity
 @Getter
 @Setter
-@Entity
 @Table(name = "users")
 public class User {
+
     @Id
     @Column(name = "user_id")
     private String userId;
