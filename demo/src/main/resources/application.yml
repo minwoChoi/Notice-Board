@@ -3,7 +3,8 @@ spring:
     name: securityTest
   # 데이터베이스 설정
   datasource:
-    url: jdbc:postgresql://localhost:5432/test-db
+    # 'localhost'를 '${SPRING_DATASOURCE_HOST}'로 변경
+    url: jdbc:postgresql://${SPRING_DATASOURCE_HOST:localhost}:5432/test-db
     username: postgres
     password: 0417
     driver-class-name: org.postgresql.Driver
@@ -17,9 +18,10 @@ spring:
     show-sql: true
   # Redis 설정
   data:
-    redis:
-      host: localhost
-      port: 6379 # redis 데이터베이스는 기본적으로 6379 포트 사용
+   redis:
+      # 'localhost'를 '${SPRING_REDIS_HOST}'로 변경
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: 6379
 
 # JWT 설정
 jwt:

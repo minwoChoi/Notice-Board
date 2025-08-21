@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  # PostgreSQL 데이터베이스 서비스
+  db:
+    image: postgres:15
+    container_name: eg-postgres-db # 컨테이너 이름 지정 (선택 사항)
+    environment:
+      POSTGRES_DB: test-db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 0417
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # Redis 서비스 추가
+  redis:
+    image: redis:7-alpine # 가벼운 alpine 버전의 Redis 이미지 사용
+    container_name: eg-redis # 컨테이너 이름 지정 (선택 사항)
+    ports:
+      - "6379:6379"
+
+  # Spring Boot 애플리케이션 서비스
+  spring-boot-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eg-spring-app # 컨테이너 이름 지정 (선택 사항)
+    ports:
+      - "8080:8080"
+    environment:
+      # Spring Boot 앱이 'db'라는 이름의 컨테이너를 찾도록 수정
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/test-db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 0417
+      # Spring Boot 앱이 'redis'라는 이름의 컨테이너를 찾도록 수정
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    depends_on:
+      - db
+      - redis # redis 서비스가 시작된 후 실행되도록 의존성 추가
+
+# 데이터베이스 데이터를 영구적으로 보관하기 위한 볼륨 설정
+volumes:
+  pgdata:

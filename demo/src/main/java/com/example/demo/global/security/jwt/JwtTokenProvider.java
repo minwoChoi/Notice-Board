@@ -46,7 +46,7 @@ public class JwtTokenProvider {
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
-
+        
         long now = (new Date()).getTime();
         String username = authentication.getName();
 
@@ -100,8 +100,8 @@ public class JwtTokenProvider {
         }
 
         Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth").toString().split(","))
-                .map(SimpleGrantedAuthority::new)
-                .toList();
+            .map(SimpleGrantedAuthority::new)  // "ROLE_USER", "ROLE_ADMIN" 그대로 전달
+            .toList();
 
         UserDetails principal = new User(claims.getSubject(), "", authorities);
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
