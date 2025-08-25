@@ -26,7 +26,7 @@ public class UserCheckController {
     public ResponseEntity<Map<String, Object>> checkUserId(@RequestParam String userId) {
         if (userId == null || userId.trim().isEmpty()) {
             String msg = "아이디를 입력해주세요.";
-            log.warn("[checkUserId] {}", msg); // 백엔드 콘솔 출력
+            log.warn("[checkUserId] {}", msg);
             return ResponseEntity.badRequest().body(Map.of("available", false, "message", msg));
         }
 
@@ -46,6 +46,7 @@ public class UserCheckController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("available", false, "message", msg));
         }
     }
+
 
     @GetMapping("/checkNickname")
     public ResponseEntity<Map<String, Object>> checkUserNickname(@RequestParam String nickname) {

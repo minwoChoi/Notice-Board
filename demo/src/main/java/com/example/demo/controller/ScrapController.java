@@ -1,21 +1,17 @@
 package com.example.demo.controller;
 
-
+import com.example.demo.dto.scrap.response.ScrapResponseDto;
+import com.example.demo.service.ScrapService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.example.demo.service.ScrapService;
-import lombok.AllArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@AllArgsConstructor
+@RequiredArgsConstructor
 @RequestMapping("/posts")
 public class ScrapController {
 
@@ -24,7 +20,7 @@ public class ScrapController {
     // 게시글 스크랩 추가 (POST /posts/{postId}/scrap)
     @PostMapping("/{postId}/scrap")
     public ResponseEntity<String> addScrap(@PathVariable Long postId, Authentication authentication) {
-        String userId = authentication.getName(); // 로그인한 사용자 정보 얻기
+        String userId = authentication.getName();
         scrapService.addScrap(userId, postId);
         return ResponseEntity.ok("스크랩 추가 완료");
     }
@@ -36,6 +32,13 @@ public class ScrapController {
         scrapService.removeScrap(userId, postId);
         return ResponseEntity.ok("스크랩 취소 완료");
     }
+
+    // 로그인한 회원의 스크랩 게시글 목록 조회 (GET /me/scraps)
+    @GetMapping("/my/scraps")
+    public ResponseEntity<List<ScrapResponseDto>> getMyScraps(Authentication authentication) {
+        String userId = authentication.getName();
+        List<ScrapResponseDto> scraps = scrapService.getMyScraps(userId);
+        return ResponseEntity.ok(scraps);
+    }
+    
 }
-
-

@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.web.bind.annotation.*;
@@ -8,17 +9,20 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.http.HttpStatus;
 
+import com.example.demo.dto.scrap.response.ScrapResponseDto;
 import com.example.demo.dto.user.request.UserDeleteRequest;
 import com.example.demo.dto.user.request.UserEditRequset;
 import com.example.demo.dto.user.request.UserReisterRequest;
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.AuthService;
+import com.example.demo.service.ScrapService;
 import com.example.demo.service.UserService;
 import org.springframework.security.core.Authentication;
-
+import java.util.*;
 @Slf4j
 @RestController
+@AllArgsConstructor
 @RequestMapping("/users")
 public class UserController {
     private final AuthService userAuthService;
@@ -26,17 +30,12 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
 
-    // 생성자에서 세 필드 모두 초기화
-    public UserController(
-        AuthService userAuthService,
-        UserService userService,
-        UserRepository userRepository,
-        PasswordEncoder passwordEncoder
-        ){
-        this.userAuthService = userAuthService;
-        this.userService = userService;
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+    private final ScrapService scrapService;
+
+    @GetMapping("/me/scraps")
+    public ResponseEntity<List<ScrapResponseDto>> getMyScraps(Authentication authentication) {
+        String userId = authentication.getName();
+        return ResponseEntity.ok(scrapService.getMyScraps(userId));
     }
 
     //회원가입

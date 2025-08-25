@@ -14,7 +14,7 @@ public class Scrap {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "scrap_id")
-    private Long commentId;
+    private Long scrapId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")

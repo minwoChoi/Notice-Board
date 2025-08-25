@@ -10,4 +10,5 @@ import com.example.demo.model.Post;
 public interface ScrapRepository extends JpaRepository<Scrap, Long> {
     boolean existsByUserAndPost(User user, Post post);
     Optional<Scrap> findByUserAndPost(User user, Post post);
+    List<Scrap> findByUser(User user);
 }
