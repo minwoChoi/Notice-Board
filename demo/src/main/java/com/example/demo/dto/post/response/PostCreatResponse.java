@@ -9,7 +9,6 @@ import lombok.Setter;
 @Setter
 public class PostCreatResponse {
     private Long postId;
-    private String category;
     private String title;
     private String content;
     private String photo;

@@ -37,13 +37,13 @@ public class CommentController {
         return ResponseEntity.ok(commentList);
     }
 
-    // //특정 Id의 댓글 목록 조회
-    // @GetMapping("/users/{userId}/comments")
-    // public ResponseEntity<List<CommentResponse>> getCommentsByUser(
-    //     @PathVariable String userId) {
-    //     List<CommentResponse> commentList = commentService.getCommentsByUserId(userId);
-    //     return ResponseEntity.ok(commentList);
-    // }
+    //특정 Id의 댓글 목록 조회
+    @GetMapping("/users/{userId}/comments")
+    public ResponseEntity<List<CommentResponse>> getCommentsByUser(
+        @PathVariable String userId) {
+        List<CommentResponse> commentList = commentService.getCommentsByUserId(userId);
+        return ResponseEntity.ok(commentList);
+    }
     
     // 댓글 작성
     @PostMapping("/{id}/comments")

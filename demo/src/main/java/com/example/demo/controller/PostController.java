@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -16,7 +17,9 @@ import com.example.demo.dto.post.request.PostCreateRequest;
 import com.example.demo.dto.post.request.PostEditRequest;
 import com.example.demo.dto.post.response.PostEditResponse;
 import com.example.demo.dto.post.response.PostListResponse;
+import com.example.demo.model.User;
 import com.example.demo.model.Post;
+import com.example.demo.model.Category;
 import com.example.demo.service.PostService;
 
 import lombok.AllArgsConstructor;
@@ -38,7 +41,7 @@ public class PostController {
         
         PostListResponse dto = new PostListResponse();
         dto.setPostId(post.getPostId());
-        dto.setCategory(post.getCategory());
+        dto.setCategoryName(post.getCategory().getCategoryName());
         dto.setTitle(post.getTitle());
         dto.setContent(post.getContent());
         dto.setPhoto(post.getPhoto());
@@ -53,13 +56,13 @@ public class PostController {
     @GetMapping("/")
     public ResponseEntity<List<PostListResponse>> getAllPosts() {
         List<Post> posts = postService.findAllPosts();
-
+        
         // 엔티티 리스트를 DTO 리스트로 변환 (매핑)
         List<PostListResponse> responseList = posts.stream()
                 .map(post -> {
                     PostListResponse dto = new PostListResponse();
                     dto.setPostId(post.getPostId());
-                    dto.setCategory(post.getCategory());
+                    dto.setCategoryName(post.getCategory().getCategoryName());
                     dto.setTitle(post.getTitle());
                     dto.setContent(post.getContent());
                     dto.setPhoto(post.getPhoto());
@@ -80,22 +83,13 @@ public class PostController {
             @RequestBody PostCreateRequest postCreateRequest, 
             Authentication authentication) {
     
-        String username = authentication.getName();
-    
-        // DTO를 Post 엔티티로 변환
-        Post post = new Post();
-        post.setCategory(postCreateRequest.getCategory());
-        post.setTitle(postCreateRequest.getTitle());
-        post.setContent(postCreateRequest.getContent());
-        post.setPhoto(postCreateRequest.getPhoto());
-    
-        // 저장 (user는 서비스단에서 set)
-        Post savedPost = postService.createPost(post, username);
+        String userId = authentication.getName();
+        Post savedPost = postService.createPost(postCreateRequest, userId);
     
         // 엔티티 -> DTO 변환
         PostListResponse response = new PostListResponse();
         response.setPostId(savedPost.getPostId());
-        response.setCategory(savedPost.getCategory());
+        response.setCategoryName(savedPost.getCategory().getCategoryName());
         response.setTitle(savedPost.getTitle());
         response.setContent(savedPost.getContent());
         response.setPhoto(savedPost.getPhoto());
@@ -122,7 +116,7 @@ public class PostController {
         // 수정된 게시글 엔티티를 응답 DTO로 변환
         PostEditResponse response = new PostEditResponse();
         response.setPostId(updatedPost.getPostId());
-        response.setCategory(updatedPost.getCategory());
+        response.setCategoryName(updatedPost.getCategory().getCategoryName());
         response.setTitle(updatedPost.getTitle());
         response.setContent(updatedPost.getContent());
         response.setPhoto(updatedPost.getPhoto());

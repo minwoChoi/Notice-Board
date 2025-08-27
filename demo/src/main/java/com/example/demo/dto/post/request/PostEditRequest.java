@@ -6,7 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PostEditRequest {
-    private String category;
+    private Long categoryId;
 
     private String title;
     

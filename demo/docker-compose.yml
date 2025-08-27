@@ -13,6 +13,7 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./init-category.sql:/docker-entrypoint-initdb.d/init-category.sql
 
   # Redis 서비스 추가
   redis:

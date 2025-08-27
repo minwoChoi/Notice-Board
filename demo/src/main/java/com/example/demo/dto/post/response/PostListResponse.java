@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 public class PostListResponse {
     private Long postId;
-    private String category;
+    private String categoryName;
     private String title;
     private String content;
     private String photo;

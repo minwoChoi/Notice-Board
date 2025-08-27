@@ -24,8 +24,9 @@ public class Post {
     @Column(name = "content")
     private String content;
 
-    @Column(name = "category")
-    private String category;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", referencedColumnName = "category_id")
+    private Category category;
 
     @Column(name = "created_date")
     private LocalDateTime createdDate;
@@ -43,14 +44,26 @@ public class Post {
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
     private User user;
 
-    // 중요: CascadeType.REMOVE + orphanRemoval 적용
+    //게시물 좋아요 연관매핑
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<PostLike> postLikes;
+
+    //댓글 연관매핑
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 
-    // 좋아요 연관매핑
+    //스크랩 연관 매핑
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
-    private List<PostLike> postLikes;
-    
+    private List<Scrap> scraps = new ArrayList<>();
+
+    //알림 연관매핑
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Notification> notifications = new ArrayList<>();
+
+    // 신고 연관매핑
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Report> reports;    
+
     // 연관관계 편의 메소드
     public void addComment(Comment comment) {
         comments.add(comment);

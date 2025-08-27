@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Setter
 public class PostEditResponse {
     private Long postId;          // 게시글 고유 ID
-    private String category;      // 카테고리
+    private String categoryName;      // 카테고리
     private String title;         // 제목
     private String content;       // 내용
     private String photo;         // 사진 URL 등

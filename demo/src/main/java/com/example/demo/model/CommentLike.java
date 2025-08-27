@@ -1,6 +1,7 @@
 package com.example.demo.model;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -27,4 +28,5 @@ public class CommentLike {
 
     @Column(name = "created_date")
     private LocalDateTime createdDate = LocalDateTime.now();
+
 }

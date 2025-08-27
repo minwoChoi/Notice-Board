@@ -34,7 +34,7 @@ public class Comment {
 
     @Column(name = "created_date")
     private LocalDateTime createdDate;
-    
+
     // 좋아요 연관매핑
     @OneToMany(mappedBy = "comment", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<CommentLike> likes;
@@ -42,7 +42,7 @@ public class Comment {
     // 알림 연관매핑 (cascade 삭제 처리 위해 추가)
     @OneToMany(mappedBy = "comment", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Notification> notifications;
-
+    
     public void increaseLikeCount() {
         this.likeCount++;
     }
