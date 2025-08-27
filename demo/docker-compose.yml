@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: test-db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 0417
+      POSTGRES_PASSWORD: eg
     ports:
       - "5432:5432"
     volumes:
@@ -33,7 +33,7 @@ services:
       # Spring Boot 앱이 'db'라는 이름의 컨테이너를 찾도록 수정
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/test-db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: 0417
+      SPRING_DATASOURCE_PASSWORD: eg
       # Spring Boot 앱이 'redis'라는 이름의 컨테이너를 찾도록 수정
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379

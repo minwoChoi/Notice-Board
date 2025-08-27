@@ -33,12 +33,5 @@ public class ScrapController {
         return ResponseEntity.ok("스크랩 취소 완료");
     }
 
-    // 로그인한 회원의 스크랩 게시글 목록 조회 (GET /me/scraps)
-    @GetMapping("/my/scraps")
-    public ResponseEntity<List<ScrapResponseDto>> getMyScraps(Authentication authentication) {
-        String userId = authentication.getName();
-        List<ScrapResponseDto> scraps = scrapService.getMyScraps(userId);
-        return ResponseEntity.ok(scraps);
-    }
     
 }

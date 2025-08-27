@@ -8,8 +8,7 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
-
-
+@Table(name = "scrap")
 public class Scrap {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
