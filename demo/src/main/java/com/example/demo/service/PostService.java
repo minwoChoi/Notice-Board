@@ -48,6 +48,7 @@ public class PostService {
     //     return postRepository.save(post);
     // }
 
+    //게시글 작성
     @Transactional
     public Post createPost(PostCreateRequest req, String userId) {
 
@@ -73,7 +74,7 @@ public class PostService {
     @Transactional
     public Post updatePost(Long postId, PostEditRequest request, String username) {
         Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new IllegalArgumentException("Post not found: " + postId));
+            .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
 
         if (!post.getUser().getUserId().equals(username)) {
             throw new SecurityException("이 게시물의 작성자가 아닙니다.");
@@ -96,7 +97,7 @@ public class PostService {
     @Transactional
     public void deletePost(Long postId, String username) {
         Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new IllegalArgumentException("Post not found: " + postId));
+            .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
 
         // 작성자 검증(로그인한 사용자가 게시글 주인인지)
         if (!post.getUser().getUserId().equals(username)) {
@@ -108,17 +109,22 @@ public class PostService {
 
     //전체 게시물 조회
     public List<Post> findAllPosts() {
+
         return postRepository.findAll();
     }
     
-    //게시물 상세 조회
+    //게시물 상세 
+    @Transactional
     public Post findPostById(Long postId, String username) {
         Post post = postRepository.findById(postId)
-        .orElseThrow(() -> new IllegalArgumentException("Post not found with id: " + postId));
+        .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+
+        post.increaseViewCount();
         return post;
 
     }
 
+    // 게시글 좋아요
     @Transactional
     public void likePost(Long postId, String userId) {
         Post post = postRepository.findById(postId)

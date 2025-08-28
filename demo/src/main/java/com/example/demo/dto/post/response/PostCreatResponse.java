@@ -11,7 +11,7 @@ public class PostCreatResponse {
     private Long postId;
     private String title;
     private String content;
-    private String photo;
+    private byte[] photo;
     private String nickname;
     private LocalDateTime createdDate;
     private int likeCount;

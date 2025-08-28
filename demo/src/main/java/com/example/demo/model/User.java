@@ -38,7 +38,7 @@ public class User {
     private Boolean authority;
 
     @Column(name = "profile_picture")
-    private String profilePicture;
+    private byte[] profilePicture;
     
     // User가 작성한 Posts
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)

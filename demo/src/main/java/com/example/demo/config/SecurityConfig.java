@@ -1,3 +1,5 @@
+// com/example/demo/config/SecurityConfig.java
+
 package com.example.demo.config;
 
 import com.example.demo.global.security.jwt.JwtAuthenticationFilter;
@@ -25,7 +27,6 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
 
-    // 1. 공개적으로 접근 가능한 경로들을 상수로 관리
     private static final String[] PUBLIC_URLS = {
             "/auth/login",
             // Swagger UI & API Docs
@@ -35,37 +36,40 @@ public class SecurityConfig {
             "/api-docs/**"
     };
 
+    // 💡 공개적으로 접근 가능한 GET 요청 경로 추가
+    private static final String[] PUBLIC_GET_URLS = {
+        "/posts/",      // 전체 게시글 목록 조회
+        "/posts/{id}"   // 게시글 상세 조회
+    };
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
                 // --- 기본 설정 ---
-                .httpBasic(AbstractHttpConfigurer::disable) // HTTP Basic 인증 비활성화
-                .csrf(AbstractHttpConfigurer::disable)      // CSRF 보호 비활성화
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // 2. CORS 설정 적용
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 STATELESS 설정
-                .formLogin(AbstractHttpConfigurer::disable) // Form Login 비활성화
-                .logout(AbstractHttpConfigurer::disable)    // Logout 비활성화
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .formLogin(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
 
                 // --- 경로별 인가 규칙 설정 ---
                 .authorizeHttpRequests(authorize ->
                         authorize
-                                // 공개 경로 허용
+                                // 기존 공개 경로 허용
                                 .requestMatchers(PUBLIC_URLS).permitAll()
-                                .requestMatchers(HttpMethod.POST, "/users/").permitAll() // 회원가입
+                                .requestMatchers(HttpMethod.POST, "/users/").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/users/checkId").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/users/checkNickname").permitAll()
 
-                                // 3. 인증이 필요한 경로 명시
-                                .requestMatchers("/users/me/**").authenticated() // '/users/me/'로 시작하는 모든 경로는 인증 필요
+                                // 👈 변경된 부분: GET 요청에 대한 공개 경로 추가
+                                .requestMatchers(HttpMethod.GET, PUBLIC_GET_URLS).permitAll()
 
-                                // 역할(Role) 기반 접근 제어
+                                .requestMatchers("/users/me/**").authenticated()
                                 .requestMatchers("/members/role").hasRole("USER")
-                                .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN") // 4. 경로 수정 제안
-
-                                // 나머지 모든 요청은 인증 필요
+                                .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
                                 .anyRequest().authenticated()
                 )
-                // --- 필터 추가 ---
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
         return httpSecurity.build();

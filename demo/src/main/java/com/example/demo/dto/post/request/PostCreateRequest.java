@@ -13,5 +13,5 @@ public class PostCreateRequest {
     
     private String content;
 
-    private String photo;
+    private byte[] photo;
 }

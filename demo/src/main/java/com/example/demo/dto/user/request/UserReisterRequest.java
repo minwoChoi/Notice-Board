@@ -27,7 +27,7 @@ public class UserReisterRequest {
 
     private Boolean authority;
 
-    private String profilePicture;
+    private byte[] profilePicture;
     
     public UserReisterRequest() {}
 }

@@ -23,8 +23,7 @@ public class UserEditRequset {
     @Schema(description = "변경할 닉네임", example = "newnickname")
     private String nickname;
 
-    @Schema(description = "변경할 프로필 사진 URL", example = "https://example.com/myprofile.jpg")
-    private String profilePicture;
+    private byte[] profilePicture;
 
 
     public UserEditRequset() {}

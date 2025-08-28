@@ -15,7 +15,7 @@ public class UserInfoResponse {
     private String phoneNumber;
     private String nickname;
     private Boolean authority;
-    private String profilePicture;
+    private byte[] profilePicture;
 
     // User 엔티티 → DTO 변환용 생성자 or 팩토리 메서드
     public static UserInfoResponse fromEntity(User user) {

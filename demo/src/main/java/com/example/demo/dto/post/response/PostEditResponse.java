@@ -11,7 +11,7 @@ public class PostEditResponse {
     private String categoryName;      // 카테고리
     private String title;         // 제목
     private String content;       // 내용
-    private String photo;         // 사진 URL 등
+    private byte[] photo;         // 사진 URL 등
     private String username;    // 작성자 이름(또는 사용자명)
     private LocalDateTime createdDate;   // 생성일시
     private int likeCount;        // 좋아요 수

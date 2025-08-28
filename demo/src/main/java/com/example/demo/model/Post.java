@@ -34,8 +34,9 @@ public class Post {
     @Column(name = "like_count")
     private int likeCount;
 
+    @Lob
     @Column(name = "photo")
-    private String photo;
+    private byte[] photo;
 
     @Column(name = "view_count")
     private int viewCount;
@@ -69,19 +70,28 @@ public class Post {
         comments.add(comment);
         comment.setPost(this);
     }
-
+    // 댓글 삭제
     public void removeComment(Comment comment) {
         comments.remove(comment);
         comment.setPost(null);
     }
 
+    // 좋아요
     public void increaseLikeCount() {
         this.likeCount++;
     }
 
+    // 좋아요 취소
     public void decreaseLikeCount() {
         if (this.likeCount > 0) {
             this.likeCount--;
         }
     }
+
+    //조회수 증가
+    public void increaseViewCount() {
+        this.viewCount++;
+    }
 }
+
+
