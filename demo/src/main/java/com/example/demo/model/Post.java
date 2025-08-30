@@ -50,7 +50,7 @@ public class Post {
     private List<PostLike> postLikes;
 
     //댓글 연관매핑
-    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 
     //스크랩 연관 매핑

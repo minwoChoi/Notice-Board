@@ -17,6 +17,7 @@ import com.example.demo.model.Comment;
 import com.example.demo.model.CommentLike;
 import com.example.demo.dto.comment.request.*;
 import com.example.demo.dto.comment.response.CommentResponse;
+import com.example.demo.dto.comment.response.MyCommentResponse;
 
 @Service
 @AllArgsConstructor
@@ -28,6 +29,15 @@ public class CommentService {
     private final CommentLikeRepository commentLikeRepository;
     private final NotificationService notificationService;
 
+
+    @Transactional(readOnly = true)
+    public List<MyCommentResponse> findMyComments(String userId) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        
+        return commentRepository.findCommentsByUserWithPostInfo(user);
+    
+    }
     //댓글 작성
     // [수정] @Transient -> @Transactional로 변경
     // com/example/demo/service/CommentService.java

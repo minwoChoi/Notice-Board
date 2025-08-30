@@ -1,14 +1,16 @@
 package com.example.demo.model;
 
+import java.util.List;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import jakarta.persistence.Column;
-import jakarta.persistence.CascadeType; 
 import lombok.Getter;
 import lombok.Setter;
-import java.util.List;
 @Entity
 @Getter
 @Setter
@@ -37,6 +39,7 @@ public class User {
     @Column(name = "authority")
     private Boolean authority;
 
+    @Lob
     @Column(name = "profile_picture")
     private byte[] profilePicture;
     

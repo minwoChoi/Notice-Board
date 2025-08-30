@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.dto.post.request.PostCreateRequest;
 import com.example.demo.dto.post.request.PostEditRequest;
+import com.example.demo.dto.post.response.PostListResponse;
 import com.example.demo.model.Post;
 import com.example.demo.model.Category;
 import com.example.demo.model.PostLike;
@@ -17,7 +18,6 @@ import com.example.demo.repository.PostLikeRepository;
 import com.example.demo.repository.PostRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.NotificationService;
-
 import lombok.AllArgsConstructor;
 
 @Service
@@ -29,24 +29,15 @@ public class PostService {
     private final PostLikeRepository postLikeRepository;
     private final CategoryRepository categoryRepository;
     private final NotificationService notificationService;
-    // //게시글 작성
-    // @Transactional
-    // public Post createPost(Post post, String userId) {
-    //     // userId로 User 조회, 없으면 예외 발생 
-    //     User user = userRepository.findByUserId(userId)
-    //             .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
-    //             //찾지 못하면 orElseThrow 가 실행되어 예외 및 메서드 중단
 
-    //     // Post 필드 세팅 - 입력 데이터를 그대로 신뢰하지 않고, 필요한 필드만 서버에서 설정
-    //     // Post 구성요소 {postId, user_id(User user), title, content, photo, likeCount, viewCount, ncreatedDate}
-    //     post.setUser(user);
-    //     post.setCreatedDate(LocalDateTime.now());
-    //     post.setLikeCount(0);
-    //     post.setViewCount(0);
-
-    //     // 게시글 저장 및 반환
-    //     return postRepository.save(post);
-    // }
+    //내가 작성한 게시물 목록 조회
+    @Transactional(readOnly = true)
+    public List<PostListResponse> findMyPosts(String userId) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        
+        return postRepository.findPostsByUserWithCommentCount(user);
+    }
 
     //게시글 작성
     @Transactional
@@ -71,6 +62,7 @@ public class PostService {
         return postRepository.save(post);
     }
 
+    //게시글 업데이트
     @Transactional
     public Post updatePost(Long postId, PostEditRequest request, String username) {
         Post post = postRepository.findById(postId)
@@ -108,20 +100,20 @@ public class PostService {
 }
 
     //전체 게시물 조회
-    public List<Post> findAllPosts() {
-
-        return postRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<PostListResponse> findAllPosts() {
+        return postRepository.findAllWithCommentCount();
     }
     
-    //게시물 상세 
+    //특정 게시물 조회
     @Transactional
     public Post findPostById(Long postId, String username) {
-        Post post = postRepository.findById(postId)
-        .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+        Post post = postRepository.findByIdWithDetails(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
 
+        // 로그인 여부와 관계없이 조회수는 증가시킵니다.
         post.increaseViewCount();
         return post;
-
     }
 
     // 게시글 좋아요
@@ -155,7 +147,6 @@ public class PostService {
         }
     }
 
-
     //게시물 추천 취소
     @Transactional
     public void unlikePost(Long postId, String userId) {
@@ -173,5 +164,13 @@ public class PostService {
         // 게시글 likeCount -1
         post.decreaseLikeCount();
         postRepository.save(post);
+    }
+    
+    @Transactional(readOnly = true)
+    public byte[] getPhotoById(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+        
+        return post.getPhoto();
     }
 }

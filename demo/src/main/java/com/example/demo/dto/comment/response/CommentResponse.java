@@ -3,7 +3,8 @@ package com.example.demo.dto.comment.response;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import com.example.demo.model.*;;
+import com.example.demo.model.*;
+
 @Getter
 @Setter
 @NoArgsConstructor

@@ -5,9 +5,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType; 
 
+import com.example.demo.dto.comment.response.CommentResponse;
 import com.example.demo.dto.post.request.PostCreateRequest;
 import com.example.demo.dto.post.request.PostEditRequest;
+import com.example.demo.dto.post.response.PostDetailResponse;
 import com.example.demo.dto.post.response.PostEditResponse;
 import com.example.demo.dto.post.response.PostListResponse;
 import com.example.demo.model.Post;
@@ -25,46 +28,42 @@ public class PostController {
 
     private final PostService postService;
 
-    // 게시글 상세 조회
+    // 상세 게시글 조회
     @GetMapping("/{id}")
-    public ResponseEntity<PostListResponse> detail(@PathVariable Long id, Authentication authentication) {
-        String username = authentication.getName();
+    public ResponseEntity<PostDetailResponse> detail(@PathVariable Long id, Authentication authentication) {
+        String username = (authentication != null) ? authentication.getName() : null;
         Post post = postService.findPostById(id, username);
 
-        PostListResponse dto = new PostListResponse();
-        dto.setPostId(post.getPostId());
-        dto.setCategoryName(post.getCategory().getCategoryName());
-        dto.setTitle(post.getTitle());
-        dto.setContent(post.getContent());
-        dto.setPhoto(post.getPhoto());
-        dto.setNickname(post.getUser().getNickname());
-        dto.setCreatedDate(post.getCreatedDate());
-        dto.setLikeCount(post.getLikeCount());
-        dto.setViewCount(post.getViewCount());
-        return ResponseEntity.ok(dto);
+        List<CommentResponse> commentResponses = post.getComments().stream()
+                .map(CommentResponse::new)
+                .toList();
+
+        PostDetailResponse responseDto = new PostDetailResponse();
+        responseDto.setPostId(post.getPostId());
+        responseDto.setCategoryName(post.getCategory().getCategoryName());
+        responseDto.setTitle(post.getTitle());
+        responseDto.setContent(post.getContent());
+        // responseDto.setPhoto(post.getPhoto()); 
+
+        // 👇 photoUrl 필드에 이미지 API 주소를 만들어서 설정합니다.
+        if (post.getPhoto() != null && post.getPhoto().length > 0) {
+            responseDto.setPhotoUrl("/posts/" + post.getPostId() + "/photo");
+        }
+
+        responseDto.setNickname(post.getUser().getNickname());
+        responseDto.setCreatedDate(post.getCreatedDate());
+        responseDto.setLikeCount(post.getLikeCount());
+        responseDto.setViewCount(post.getViewCount());
+        responseDto.setComments(commentResponses);
+
+        return ResponseEntity.ok(responseDto);
     }
 
     // 전체 게시글 목록 조회
     @GetMapping("/")
     public ResponseEntity<List<PostListResponse>> getAllPosts() {
-        List<Post> posts = postService.findAllPosts();
-
-        List<PostListResponse> responseList = posts.stream()
-                .map(post -> {
-                    PostListResponse dto = new PostListResponse();
-                    dto.setPostId(post.getPostId());
-                    dto.setCategoryName(post.getCategory().getCategoryName());
-                    dto.setTitle(post.getTitle());
-                    dto.setContent(post.getContent());
-                    dto.setPhoto(post.getPhoto());
-                    dto.setNickname(post.getUser().getNickname());
-                    dto.setCreatedDate(post.getCreatedDate());
-                    dto.setLikeCount(post.getLikeCount());
-                    dto.setViewCount(post.getViewCount());
-                    return dto;
-                })
-                .toList();
-
+        // 서비스가 직접 DTO 리스트를 반환하므로, 받아서 그대로 응답하면 끝입니다.
+        List<PostListResponse> responseList = postService.findAllPosts();
         return ResponseEntity.ok(responseList);
     }
 
@@ -99,7 +98,11 @@ public class PostController {
         response.setCategoryName(savedPost.getCategory().getCategoryName());
         response.setTitle(savedPost.getTitle());
         response.setContent(savedPost.getContent());
-        response.setPhoto(savedPost.getPhoto());
+        //response.setPhoto(savedPost.getPhoto());
+        if (savedPost.getPhoto() != null && savedPost.getPhoto().length > 0) {
+            response.setPhotoUrl("/posts/" + savedPost.getPostId() + "/photo");
+        }
+
         response.setNickname(savedPost.getUser().getNickname());
         response.setCreatedDate(savedPost.getCreatedDate());
         response.setLikeCount(savedPost.getLikeCount());
@@ -167,5 +170,19 @@ public class PostController {
         String username = authentication.getName();
         postService.unlikePost(id, username);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}/photo")
+    public ResponseEntity<byte[]> getPostPhoto(@PathVariable Long id) {
+        byte[] photoBytes = postService.getPhotoById(id); // (서비스에 이 메소드 추가 필요)
+
+        if (photoBytes == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // 브라우저가 이 응답을 이미지로 해석하도록 Content-Type을 설정
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG) // 또는 IMAGE_PNG 등
+                .body(photoBytes);
     }
 }
