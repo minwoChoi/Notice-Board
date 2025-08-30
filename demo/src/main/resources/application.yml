@@ -1,16 +1,12 @@
 spring:
   datasource:
-    # [수정] url의 호스트 부분만 환경 변수로 받도록 유지
     url: jdbc:postgresql://${SPRING_DATASOURCE_HOST:localhost}:5432/test-db
-    # [수정] username과 password도 환경 변수로 받을 수 있도록 변경
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:eg}
   data:
-   redis:
-      # [수정] host와 port 모두 환경 변수로 받을 수 있도록 변경
+    redis:
       host: ${SPRING_REDIS_HOST:localhost}
       port: ${SPRING_REDIS_PORT:6379}
-  # JPA 설정
   jpa:
     hibernate:
       ddl-auto: update
@@ -23,19 +19,15 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
-
-# JWT 설정
 jwt:
   secret: ksdf98asjkdln9081u9023ndfoiqwernvsdfiu23ndf8923
 
-# 로그 설정
 logging:
   level:
     org:
       springframework: info
       zerock: debug
 
-# Swagger 설정
 springdoc:
   api-docs:
     path: /api-docs
@@ -46,5 +38,3 @@ springdoc:
     url: /api-docs
   default-produces-media-type: application/json
   default-consumes-media-type: application/json
-
-  

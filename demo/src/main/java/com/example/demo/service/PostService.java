@@ -9,15 +9,15 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.demo.dto.post.request.PostCreateRequest;
 import com.example.demo.dto.post.request.PostEditRequest;
 import com.example.demo.dto.post.response.PostListResponse;
-import com.example.demo.model.Post;
 import com.example.demo.model.Category;
+import com.example.demo.model.Post;
 import com.example.demo.model.PostLike;
 import com.example.demo.model.User;
 import com.example.demo.repository.CategoryRepository;
 import com.example.demo.repository.PostLikeRepository;
 import com.example.demo.repository.PostRepository;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.service.NotificationService;
+
 import lombok.AllArgsConstructor;
 
 @Service
@@ -31,12 +31,24 @@ public class PostService {
     private final NotificationService notificationService;
 
     //내가 작성한 게시물 목록 조회
-    @Transactional(readOnly = true)
+   @Transactional(readOnly = true)
     public List<PostListResponse> findMyPosts(String userId) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         
-        return postRepository.findPostsByUserWithCommentCount(user);
+        // 1. 기존 로직으로 DTO 리스트를 먼저 조회합니다.
+        List<PostListResponse> responseList = postRepository.findPostsByUserWithCommentCount(user);
+
+        // 2. 사용자의 프로필 사진 URL을 생성합니다.
+        String profilePictureUrl = (user.getProfilePicture() != null && user.getProfilePicture().length > 0)
+                ? "/users/" + userId + "/photo"
+                : null;
+        
+        // 3. 각 DTO에 작성자의 프로필 사진 URL을 설정해줍니다.
+        responseList.forEach(dto -> dto.setAuthorProfilePictureUrl(profilePictureUrl));
+
+        // 4. URL이 추가된 리스트를 반환합니다.
+        return responseList;
     }
 
     //게시글 작성
@@ -102,7 +114,42 @@ public class PostService {
     //전체 게시물 조회
     @Transactional(readOnly = true)
     public List<PostListResponse> findAllPosts() {
-        return postRepository.findAllWithCommentCount();
+        // 1. Repository에서 User 정보가 포함된 Post 엔티티 목록을 조회합니다.
+        List<Post> posts = postRepository.findAllPostsWithDetails();
+
+        // 2. Post 엔티티 목록을 PostListResponse DTO 목록으로 변환합니다.
+        return posts.stream()
+                .map(post -> {
+                    User author = post.getUser();
+                    
+                    // 3. 작성자의 프로필 사진 URL을 생성합니다.
+                    String authorProfilePictureUrl = (author.getProfilePicture() != null && author.getProfilePicture().length > 0)
+                            ? "/users/" + author.getUserId() + "/photo"
+                            : null;
+                    
+                    // 4. PostListResponse DTO를 생성하고 필드를 설정합니다.
+                    PostListResponse dto = new PostListResponse();
+                    dto.setPostId(post.getPostId());
+                    dto.setCategoryName(post.getCategory().getCategoryName());
+                    dto.setTitle(post.getTitle());
+                    dto.setContent(post.getContent());
+                    dto.setNickname(author.getNickname());
+                    dto.setCreatedDate(post.getCreatedDate());
+                    dto.setLikeCount(post.getLikeCount());
+                    dto.setViewCount(post.getViewCount());
+                    dto.setCommentCount((long) post.getComments().size()); // 댓글 수 설정
+
+                    // 게시물 사진 URL 설정
+                    if (post.getPhoto() != null && post.getPhoto().length > 0) {
+                        dto.setPhotoUrl("/posts/" + post.getPostId() + "/photo");
+                    }
+
+                    // 👇 생성된 작성자 프로필 사진 URL을 설정합니다.
+                    dto.setAuthorProfilePictureUrl(authorProfilePictureUrl);
+                    
+                    return dto;
+                })
+                .toList();
     }
     
     //특정 게시물 조회

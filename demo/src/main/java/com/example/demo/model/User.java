@@ -2,6 +2,9 @@ package com.example.demo.model;
 
 import java.util.List;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -40,7 +43,8 @@ public class User {
     private Boolean authority;
 
     @Lob
-    @Column(name = "profile_picture")
+    @Column(name = "profile_picture", columnDefinition = "bytea")
+    @JdbcTypeCode(SqlTypes.VARBINARY) // 👈 이 어노테이션을 추가하세요.
     private byte[] profilePicture;
     
     // User가 작성한 Posts

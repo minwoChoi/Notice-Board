@@ -1,23 +1,25 @@
 package com.example.demo.service;
 
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
-// [수정] Spring의 Transactional을 임포트합니다.
-import org.springframework.transaction.annotation.Transactional; 
-import com.example.demo.repository.UserRepository;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.demo.dto.comment.request.CommentEditRequest;
+import com.example.demo.dto.comment.response.CommentResponse;
+import com.example.demo.dto.comment.response.MyCommentResponse;
+import com.example.demo.model.Comment;
+import com.example.demo.model.CommentLike;
+import com.example.demo.model.Post;
+import com.example.demo.model.User;
 import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.PostRepository;
+import com.example.demo.repository.UserRepository;
+
 import lombok.AllArgsConstructor;
-import com.example.demo.model.Post;
-import com.example.demo.model.User;
-import com.example.demo.model.Comment;
-import com.example.demo.model.CommentLike;
-import com.example.demo.dto.comment.request.*;
-import com.example.demo.dto.comment.response.CommentResponse;
-import com.example.demo.dto.comment.response.MyCommentResponse;
 
 @Service
 @AllArgsConstructor
@@ -35,8 +37,20 @@ public class CommentService {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         
-        return commentRepository.findCommentsByUserWithPostInfo(user);
+        // 1. 기존 로직으로 DTO 리스트를 먼저 조회합니다.
+        // 이 시점의 DTO에는 아직 profilePictureUrl이 없습니다.
+        List<MyCommentResponse> responseList = commentRepository.findCommentsByUserWithPostInfo(user);
     
+        // 2. 사용자의 프로필 사진 URL을 생성합니다. (사진이 없으면 null)
+        String profilePictureUrl = (user.getProfilePicture() != null && user.getProfilePicture().length > 0)
+                ? "/users/" + userId + "/photo"
+                : null;
+
+        // 3. 조회된 각 DTO에 프로필 사진 URL을 설정해줍니다.
+        responseList.forEach(dto -> dto.setProfilePictureUrl(profilePictureUrl));
+
+        // 4. URL이 추가된 리스트를 반환합니다.
+        return responseList;
     }
     //댓글 작성
     // [수정] @Transient -> @Transactional로 변경

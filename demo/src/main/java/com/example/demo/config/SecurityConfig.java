@@ -2,9 +2,6 @@
 
 package com.example.demo.config;
 
-import com.example.demo.global.security.jwt.JwtAuthenticationFilter;
-import com.example.demo.global.security.jwt.JwtTokenProvider;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,6 +17,11 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.example.demo.global.security.jwt.JwtAuthenticationFilter;
+import com.example.demo.global.security.jwt.JwtTokenProvider;
+
+import lombok.RequiredArgsConstructor;
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -29,7 +31,6 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC_URLS = {
             "/auth/login",
-            // Swagger UI & API Docs
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/v3/api-docs/**",

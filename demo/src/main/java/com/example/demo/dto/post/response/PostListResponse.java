@@ -14,14 +14,16 @@ public class PostListResponse {
     private String categoryName;
     private String title;
     private String content;
-    private String photoUrl; 
+    private String photoUrl; // 게시물 자체의 사진 URL
     private String nickname;
     private LocalDateTime createdDate;
     private int likeCount;
     private int viewCount;
     private Long commentCount;
 
-    // JPQL 결과를 직접 매핑하기 위한 생성자 수정
+    private String authorProfilePictureUrl;
+
+    // JPQL 결과를 직접 매핑하기 위한 생성자 수정 (기존 유지)
     public PostListResponse(Long postId, String categoryName, String title, String content, byte[] photo, 
                             String nickname, LocalDateTime createdDate, int likeCount, int viewCount, Long commentCount) {
         this.postId = postId;
@@ -34,7 +36,6 @@ public class PostListResponse {
         this.viewCount = viewCount;
         this.commentCount = commentCount;
 
-        // photo 데이터를 받아서 photoUrl을 생성하는 로직
         if (photo != null && photo.length > 0) {
             this.photoUrl = "/posts/" + postId + "/photo";
         }

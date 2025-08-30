@@ -1,11 +1,22 @@
 package com.example.demo.controller;
 
+import java.io.IOException;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.http.MediaType; 
 
 import com.example.demo.dto.comment.response.CommentResponse;
 import com.example.demo.dto.post.request.PostCreateRequest;
@@ -14,12 +25,10 @@ import com.example.demo.dto.post.response.PostDetailResponse;
 import com.example.demo.dto.post.response.PostEditResponse;
 import com.example.demo.dto.post.response.PostListResponse;
 import com.example.demo.model.Post;
+import com.example.demo.model.User;
 import com.example.demo.service.PostService;
 
 import lombok.AllArgsConstructor;
-
-import java.io.IOException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/posts")
@@ -29,32 +38,39 @@ public class PostController {
     private final PostService postService;
 
     // 상세 게시글 조회
-    @GetMapping("/{id}")
+   @GetMapping("/{id}")
     public ResponseEntity<PostDetailResponse> detail(@PathVariable Long id, Authentication authentication) {
         String username = (authentication != null) ? authentication.getName() : null;
         Post post = postService.findPostById(id, username);
 
+        // ... 기존 댓글 DTO 변환 로직 ...
         List<CommentResponse> commentResponses = post.getComments().stream()
                 .map(CommentResponse::new)
                 .toList();
 
+        // 게시글 데이터를 PostDetailResponse DTO에 매핑
         PostDetailResponse responseDto = new PostDetailResponse();
+        // ... postId, title, nickname 등 기존 필드 매핑 ...
         responseDto.setPostId(post.getPostId());
         responseDto.setCategoryName(post.getCategory().getCategoryName());
         responseDto.setTitle(post.getTitle());
         responseDto.setContent(post.getContent());
-        // responseDto.setPhoto(post.getPhoto()); 
-
-        // 👇 photoUrl 필드에 이미지 API 주소를 만들어서 설정합니다.
-        if (post.getPhoto() != null && post.getPhoto().length > 0) {
-            responseDto.setPhotoUrl("/posts/" + post.getPostId() + "/photo");
-        }
-
         responseDto.setNickname(post.getUser().getNickname());
         responseDto.setCreatedDate(post.getCreatedDate());
         responseDto.setLikeCount(post.getLikeCount());
         responseDto.setViewCount(post.getViewCount());
         responseDto.setComments(commentResponses);
+
+        // 게시물 사진 URL 설정
+        if (post.getPhoto() != null && post.getPhoto().length > 0) {
+            responseDto.setPhotoUrl("/posts/" + post.getPostId() + "/photo");
+        }
+
+        // 👇 작성자 프로필 사진 URL 설정 로직 추가
+        User author = post.getUser();
+        if (author.getProfilePicture() != null && author.getProfilePicture().length > 0) {
+            responseDto.setAuthorProfilePictureUrl("/users/" + author.getUserId() + "/photo");
+        }
 
         return ResponseEntity.ok(responseDto);
     }
@@ -68,16 +84,14 @@ public class PostController {
     }
 
     // 게시글 작성 (수정된 방식)
-    @PostMapping(value = "/", consumes = { "multipart/form-data" })
+@PostMapping(value = "/", consumes = { "multipart/form-data" })
     public ResponseEntity<PostListResponse> createPost(
-            // 1. DTO 대신 각 필드를 @RequestParam으로 받습니다.
             @RequestParam("title") String title,
             @RequestParam("content") String content,
             @RequestParam("categoryId") Long categoryId,
             @RequestPart(value = "photo", required = false) MultipartFile photo,
             Authentication authentication) throws IOException {
 
-        // 2. 받은 파라미터로 DTO를 직접 생성합니다.
         PostCreateRequest postCreateRequest = new PostCreateRequest();
         postCreateRequest.setTitle(title);
         postCreateRequest.setContent(content);
@@ -85,32 +99,39 @@ public class PostController {
 
         String userId = authentication.getName();
         
-        // 3. 사진 데이터를 DTO에 추가합니다.
         if (photo != null && !photo.isEmpty()) {
             postCreateRequest.setPhoto(photo.getBytes());
         }
         
         Post savedPost = postService.createPost(postCreateRequest, userId);
 
-        // 응답 생성 로직은 동일
+        
         PostListResponse response = new PostListResponse();
         response.setPostId(savedPost.getPostId());
         response.setCategoryName(savedPost.getCategory().getCategoryName());
         response.setTitle(savedPost.getTitle());
         response.setContent(savedPost.getContent());
-        //response.setPhoto(savedPost.getPhoto());
-        if (savedPost.getPhoto() != null && savedPost.getPhoto().length > 0) {
-            response.setPhotoUrl("/posts/" + savedPost.getPostId() + "/photo");
-        }
-
         response.setNickname(savedPost.getUser().getNickname());
         response.setCreatedDate(savedPost.getCreatedDate());
         response.setLikeCount(savedPost.getLikeCount());
         response.setViewCount(savedPost.getViewCount());
 
+        // 1. 게시물 사진 URL 설정 (기존 로직)
+        if (savedPost.getPhoto() != null && savedPost.getPhoto().length > 0) {
+            response.setPhotoUrl("/posts/" + savedPost.getPostId() + "/photo");
+        }
+
+        // 2. [추가] 댓글 수는 0으로 설정
+        response.setCommentCount(0L); // 새로 만든 게시물이므로 댓글은 0개입니다.
+
+        // 3. [추가] 작성자 프로필 사진 URL 설정
+        User author = savedPost.getUser();
+        if (author.getProfilePicture() != null && author.getProfilePicture().length > 0) {
+            response.setAuthorProfilePictureUrl("/users/" + author.getUserId() + "/photo");
+        }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-
     // 게시글 수정 (수정된 방식)
     @PatchMapping(value = "/{id}", consumes = { "multipart/form-data" })
     public ResponseEntity<PostEditResponse> updatePost(

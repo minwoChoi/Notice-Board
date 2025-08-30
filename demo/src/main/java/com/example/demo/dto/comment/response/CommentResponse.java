@@ -1,9 +1,10 @@
 package com.example.demo.dto.comment.response;
 
+import com.example.demo.model.Comment;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import com.example.demo.model.*;
 
 @Getter
 @Setter
@@ -11,18 +12,23 @@ import com.example.demo.model.*;
 public class CommentResponse {
     private Long commentId;
     private String nickname;          // 작성자 닉네임
-    private byte[] profilePicture;  //작성자 사진
+    private String profilePictureUrl; 
     private String content;
     private int likeCount;            // 추천수
     private String createdDate;
 
+    
     public CommentResponse(Comment comment) {
         this.commentId = comment.getCommentId();
         this.nickname = comment.getUser().getNickname();
         this.content = comment.getContent();
-        this.profilePicture = comment.getUser().getProfilePicture();
         this.likeCount = comment.getLikeCount();
-        this.createdDate = comment.getCreatedDate().toString(); // 필요하다면 날짜 포맷팅
+        this.createdDate = comment.getCreatedDate().toString();
+
+        // 👇 사용자 프로필 사진이 있으면 URL을 생성하고, 없으면 null로 설정합니다.
+        if (comment.getUser().getProfilePicture() != null && comment.getUser().getProfilePicture().length > 0) {
+            this.profilePictureUrl = "/users/" + comment.getUser().getUserId() + "/photo";
+        }
     }
 }
 
