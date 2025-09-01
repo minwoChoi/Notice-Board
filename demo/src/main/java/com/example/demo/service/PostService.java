@@ -138,14 +138,13 @@ public class PostService {
                     dto.setLikeCount(post.getLikeCount());
                     dto.setViewCount(post.getViewCount());
                     dto.setCommentCount((long) post.getComments().size()); // 댓글 수 설정
+                    dto.setAuthorProfilePictureUrl(authorProfilePictureUrl);
+                    dto.setBlocked(post.isBlocked());
 
-                    // 게시물 사진 URL 설정
                     if (post.getPhoto() != null && post.getPhoto().length > 0) {
                         dto.setPhotoUrl("/posts/" + post.getPostId() + "/photo");
                     }
 
-                    // 👇 생성된 작성자 프로필 사진 URL을 설정합니다.
-                    dto.setAuthorProfilePictureUrl(authorProfilePictureUrl);
                     
                     return dto;
                 })

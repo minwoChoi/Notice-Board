@@ -26,14 +26,13 @@ public class ReportService {
     private final PostRepository postRepository;
 
     // 1. 게시물 신고하기
-    @Transactional
+   @Transactional
     public void createReport(Long postId, ReportRequestDto requestDto, String userId) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시물을 찾을 수 없습니다."));
 
-        // 중복 신고 방지
         if (reportRepository.existsByUserAndPost(user, post)) {
             throw new IllegalStateException("이미 신고한 게시물입니다.");
         }
@@ -46,6 +45,17 @@ public class ReportService {
         report.setCreatedDate(LocalDateTime.now());
 
         reportRepository.save(report);
+
+        // --- 👇 Add this logic ---
+        // 1. Increase the report count for the post
+        post.increaseReportCount();
+
+        // 2. Check if the report count reaches the threshold (5)
+        if (post.getReportCount() >= 5) {
+            post.setBlocked(true);
+        }
+        // Note: Because of @Transactional, changes to 'post' will be automatically saved.
+        // --- End of new logic ---
     }
 
     // 2. 내 신고 내역 목록 조회

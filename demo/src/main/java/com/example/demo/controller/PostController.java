@@ -84,7 +84,7 @@ public class PostController {
     }
 
     // 게시글 작성 (수정된 방식)
-@PostMapping(value = "/", consumes = { "multipart/form-data" })
+    @PostMapping(value = "/", consumes = { "multipart/form-data" })
     public ResponseEntity<PostListResponse> createPost(
             @RequestParam("title") String title,
             @RequestParam("content") String content,

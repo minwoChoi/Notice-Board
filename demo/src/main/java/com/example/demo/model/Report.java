@@ -32,4 +32,5 @@ public class Report {
 
      @Column(name = "created_date")
     private LocalDateTime createdDate;
+
 }

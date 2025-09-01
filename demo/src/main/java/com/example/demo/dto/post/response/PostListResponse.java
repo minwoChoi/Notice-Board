@@ -19,10 +19,9 @@ public class PostListResponse {
     private LocalDateTime createdDate;
     private int likeCount;
     private int viewCount;
-    private Long commentCount;
-
     private String authorProfilePictureUrl;
-
+    private boolean isBlocked;
+    private Long commentCount;
     // JPQL 결과를 직접 매핑하기 위한 생성자 수정 (기존 유지)
     public PostListResponse(Long postId, String categoryName, String title, String content, byte[] photo, 
                             String nickname, LocalDateTime createdDate, int likeCount, int viewCount, Long commentCount) {

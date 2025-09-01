@@ -18,8 +18,9 @@ public class PostDetailResponse {
     private String photoUrl; //게시물 사진
     private String nickname;
     private LocalDateTime createdDate;
+    private boolean isBlocked;
     private int likeCount;
     private int viewCount;
+    private String authorProfilePictureUrl;
     private List<CommentResponse> comments; // 이 부분을 추가합니다
-    private String authorProfilePictureUrl;  //작성자 프로필
 }

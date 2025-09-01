@@ -60,6 +60,12 @@ public class Post {
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
     private User user;
 
+    @Column(name = "report_count")
+    private int reportCount = 0;
+
+    @Column(name = "is_blocked")
+    private boolean isBlocked = false;
+
     //게시물 좋아요 연관매핑
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<PostLike> postLikes;
@@ -106,6 +112,11 @@ public class Post {
     //조회수 증가
     public void increaseViewCount() {
         this.viewCount++;
+    }
+
+    //신고 수 증가
+    public void increaseReportCount() {
+        this.reportCount++;
     }
 }
 

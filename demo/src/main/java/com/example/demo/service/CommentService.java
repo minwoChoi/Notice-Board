@@ -112,7 +112,6 @@ public class CommentService {
         commentRepository.delete(comment);
     }
     
-    //댓글 추천
     @Transactional
     public void likeComment(Long commentId, Long postId, String userId) {
         Comment comment = commentRepository.findById(commentId)
@@ -130,11 +129,15 @@ public class CommentService {
         commentLikeRepository.save(like);
         
         comment.increaseLikeCount();
-        // [개선] 이 save 호출은 사실상 불필요하지만, 명시적으로 둘 수도 있습니다.
 
-        // [추가] 댓글 작성자에게 알림 보내기
-        String message = user.getNickname() + "님이 회원님의 댓글을 추천했습니다.";
-        notificationService.createNotification(comment.getUser(), message, comment.getPost(), comment);
+        
+        // --- 👇 이 부분을 수정하세요 ---
+        // 추천 누른 사람과 댓글 작성자가 다른 경우에만 알림을 보냅니다.
+        if (!user.equals(comment.getUser())) {
+            String message = user.getNickname() + "님이 회원님의 댓글을 추천했습니다.";
+            notificationService.createNotification(comment.getUser(), message, comment.getPost(), comment);
+        }
+        // --- 여기까지 수정 ---
     }
 
     //댓글 추천 취소
