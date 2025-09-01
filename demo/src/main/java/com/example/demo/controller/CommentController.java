@@ -31,8 +31,16 @@ public class CommentController {
 
     // 댓글 목록 조회 (특정 게시글의 댓글들)
     @GetMapping("/{postId}/comments")
-    public ResponseEntity<List<CommentResponse>> getAllCommentList(@PathVariable Long postId, Authentication authentication) {
-        List<CommentResponse> commentList = commentService.getCommentsByPostId(postId);
+    public ResponseEntity<List<CommentResponse>> getAllCommentList(
+            @PathVariable Long postId, 
+            Authentication authentication) {
+
+        // 1. 로그인한 사용자 ID를 추출합니다 (비로그인 시 null).
+        String currentUserId = (authentication != null) ? authentication.getName() : null;
+
+        // 2. 서비스에 사용자 ID를 함께 전달합니다.
+        List<CommentResponse> commentList = commentService.getCommentsByPostId(postId, currentUserId);
+        
         return ResponseEntity.ok(commentList);
     }
 

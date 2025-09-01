@@ -154,11 +154,24 @@ public class CommentService {
     //게시물 댓글 목록 조회
     // [개선] 읽기 전용 트랜잭션 추가
     @Transactional(readOnly = true)
-    public List<CommentResponse> getCommentsByPostId(Long postId) {
+    public List<CommentResponse> getCommentsByPostId(Long postId, String currentUserId) {
+        // 1. 게시물의 모든 댓글을 가져옵니다.
         List<Comment> comments = commentRepository.findByPost_PostId(postId);
-        return comments.stream().map(CommentResponse::new).collect(Collectors.toList());
-    }
 
+        // 2. Comment 엔티티를 CommentResponse DTO로 변환합니다.
+        return comments.stream().map(comment -> {
+            CommentResponse dto = new CommentResponse(comment);
+            
+            // 3. 현재 사용자와 댓글 작성자가 같은지 확인하여 isMine 필드를 설정합니다.
+            // 로그인하지 않은 사용자(currentUserId가 null)는 모든 isMine이 false가 됩니다.
+            if (currentUserId != null && currentUserId.equals(comment.getUser().getUserId())) {
+                dto.setMine(true);
+            } else {
+                dto.setMine(false);
+            }
+            return dto;
+        }).toList();
+    }
     // [개선] 읽기 전용 트랜잭션 추가
     @Transactional(readOnly = true)
     public List<CommentResponse> getCommentsByUserId(String userId) {

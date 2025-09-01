@@ -11,12 +11,14 @@ import lombok.Setter;
 @NoArgsConstructor
 public class CommentResponse {
     private Long commentId;
-    private String nickname;          // 작성자 닉네임
+    private String nickname;
     private String profilePictureUrl; 
     private String content;
-    private int likeCount;            // 추천수
+    private int likeCount;
     private String createdDate;
 
+    private String userId;
+    private boolean isMine;
     
     public CommentResponse(Comment comment) {
         this.commentId = comment.getCommentId();
@@ -24,11 +26,10 @@ public class CommentResponse {
         this.content = comment.getContent();
         this.likeCount = comment.getLikeCount();
         this.createdDate = comment.getCreatedDate().toString();
-
-        // 👇 사용자 프로필 사진이 있으면 URL을 생성하고, 없으면 null로 설정합니다.
         if (comment.getUser().getProfilePicture() != null && comment.getUser().getProfilePicture().length > 0) {
             this.profilePictureUrl = "/users/" + comment.getUser().getUserId() + "/photo";
         }
+        this.userId = comment.getUser().getUserId();
     }
 }
 
