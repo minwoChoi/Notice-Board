@@ -215,34 +215,6 @@ public class PostService {
         postRepository.save(post);
     }
     
-    @Transactional
-    public boolean toggleLike(Long postId, String username) {
-        Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new EntityNotFoundException("Post not found"));
-        User user = userRepository.findByName(username)
-            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
-        Optional<PostLike> existingLikeOpt = postLikeRepository.findByPostAndUser(post, user);
-        
-        if (existingLikeOpt.isPresent()) {
-            // 이미 좋아요 되어 있으면 삭제 (좋아요 취소)
-            postLikeRepository.delete(existingLikeOpt.get());
-            post.decreaseLikeCount();
-            postRepository.save(post);
-            return false; // 현재 좋아요 취소됨 상태
-        } else {
-            // 좋아요가 없으면 새로 추가
-            PostLike newLike = new PostLike();
-            newLike.setPost(post);
-            newLike.setUser(user);
-            postLikeRepository.save(newLike);
-            post.increaseLikeCount();
-            postRepository.save(post);
-            return true; // 현재 좋아요 활성화 상태
-        }
-    }
-
-    
     @Transactional(readOnly = true)
     public byte[] getPhotoById(Long postId) {
         Post post = postRepository.findById(postId)
@@ -250,4 +222,37 @@ public class PostService {
         
         return post.getPhoto();
     }
+
+    @Transactional
+    public boolean toggleLike(Long postId, String userId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new EntityNotFoundException("게시글이 없습니다"));
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자가 없습니다"));
+
+        Optional<PostLike> existing = postLikeRepository.findByPostAndUser(post, user);
+        if (existing.isPresent()) {
+            postLikeRepository.delete(existing.get());
+            post.decreaseLikeCount();
+            postRepository.save(post);
+            return false;  // 좋아요 취소됨
+        } else {
+            PostLike newLike = new PostLike();
+            newLike.setPost(post);
+            newLike.setUser(user);
+            postLikeRepository.save(newLike);
+            post.increaseLikeCount();
+            postRepository.save(post);
+
+            // 좋아요 알림 전송: 작성자와 좋아요 누른 사용자가 다를 경우에만
+            if (!user.getUserId().equals(post.getUser().getUserId())) {
+                String message = user.getNickname() + "님이 회원님의 게시물을 추천했습니다.";
+                notificationService.createNotification(post.getUser(), message, post, null /*댓글 없음*/);
+            }
+
+            return true;   // 좋아요 추가됨
+        }
+    }
+
+
 }

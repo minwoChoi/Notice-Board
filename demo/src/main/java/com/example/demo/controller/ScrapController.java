@@ -17,20 +17,11 @@ public class ScrapController {
 
     private final ScrapService scrapService;
 
-    // 게시글 스크랩 추가 (POST /posts/{postId}/scrap)
     @PostMapping("/{postId}/scrap")
-    public ResponseEntity<String> addScrap(@PathVariable Long postId, Authentication authentication) {
+    public ResponseEntity<Boolean> toggleScrap(@PathVariable Long postId, Authentication authentication) {
         String userId = authentication.getName();
-        scrapService.addScrap(userId, postId);
-        return ResponseEntity.ok("스크랩 추가 완료");
-    }
-
-    // 게시글 스크랩 취소 (DELETE /posts/{postId}/scrap)
-    @DeleteMapping("/{postId}/scrap")
-    public ResponseEntity<String> removeScrap(@PathVariable Long postId, Authentication authentication) {
-        String userId = authentication.getName();
-        scrapService.removeScrap(userId, postId);
-        return ResponseEntity.ok("스크랩 취소 완료");
+        boolean isScrapped = scrapService.toggleScrap(userId, postId);
+        return ResponseEntity.ok(isScrapped);  // 현재 스크랩 상태 반환
     }
 
     

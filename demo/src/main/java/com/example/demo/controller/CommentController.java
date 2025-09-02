@@ -98,26 +98,14 @@ public class CommentController {
 
     //댓글 추천
     @PostMapping("/{postId}/comments/{commentId}/likes")
-    public ResponseEntity<Void> likeComment(
-        @PathVariable  Long commentId,
-        @PathVariable  Long postId,
-        Authentication authentication) {
-
-        String username = authentication.getName();
-        commentService.likeComment(commentId, postId, username);
+    public ResponseEntity<Boolean> toggleLikeComment(
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            Authentication authentication) {
     
-        return ResponseEntity.ok().build();
+        String username = authentication.getName();
+        boolean isLikedNow = commentService.toggleLikeComment(commentId, postId, username);
+        return ResponseEntity.ok(isLikedNow); // 현재 좋아요 상태 반환
     }
     
-    //댓글 추천 삭제
-    @DeleteMapping("/{postId}/comments/{commentId}/likes")
-    public ResponseEntity<Void> unlikeComment(
-        @PathVariable  Long commentId,
-        @PathVariable  Long postId,
-        Authentication authentication) {
-        String username = authentication.getName();
-        commentService.unlikeComment(commentId, postId, username);
-        return ResponseEntity.ok().build();
-    }
-
 }

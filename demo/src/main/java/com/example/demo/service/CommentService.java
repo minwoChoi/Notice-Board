@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -180,5 +181,37 @@ public class CommentService {
     public List<CommentResponse> getCommentsByUserId(String userId) {
         List<Comment> comments = commentRepository.findByUser_UserId(userId);
         return comments.stream().map(CommentResponse::new).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public boolean toggleLikeComment(Long commentId, Long postId, String userId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        Optional<CommentLike> existingLike = commentLikeRepository.findByCommentAndUser(comment, user);
+        if (existingLike.isPresent()) {
+            // 좋아요 취소
+            commentLikeRepository.delete(existingLike.get());
+            comment.decreaseLikeCount();
+            commentRepository.save(comment);
+            return false; // 좋아요 취소됨
+        } else {
+            // 좋아요 추가
+            CommentLike like = new CommentLike();
+            like.setComment(comment);
+            like.setUser(user);
+            commentLikeRepository.save(like);
+            comment.increaseLikeCount();
+            commentRepository.save(comment);
+
+            // 알림 생성 (작성자와 다를 경우만)
+            if (!user.equals(comment.getUser())) {
+                String message = user.getNickname() + "님이 회원님의 댓글을 추천했습니다.";
+                notificationService.createNotification(comment.getUser(), message, comment.getPost(), comment);
+            }
+            return true; // 좋아요 추가됨
+        }
     }
 }

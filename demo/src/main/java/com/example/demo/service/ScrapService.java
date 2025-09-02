@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,5 +91,26 @@ public class ScrapService {
                     return dto;
                 })
                 .toList();
+    }
+    @Transactional
+    public boolean toggleScrap(String userId, Long postId) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+
+        Optional<Scrap> existingScrap = scrapRepository.findByUserAndPost(user, post);
+
+        if (existingScrap.isPresent()) {
+            scrapRepository.delete(existingScrap.get());  // 스크랩 취소
+            return false;  // 스크랩 해제됨
+        } else {
+            Scrap scrap = new Scrap();
+            scrap.setUser(user);
+            scrap.setPost(post);
+            scrap.setCreatedDate(LocalDateTime.now());
+            scrapRepository.save(scrap);  // 스크랩 추가
+            return true;  // 스크랩 활성화됨
+        }
     }
 }

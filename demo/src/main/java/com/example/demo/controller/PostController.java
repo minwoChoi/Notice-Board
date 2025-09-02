@@ -181,10 +181,10 @@ public class PostController {
 
     // 게시글 추천
     @PostMapping("/{id}/like")
-    public ResponseEntity<Void> likePost(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<Boolean> toggleLikePost(@PathVariable Long id, Authentication authentication) {
         String username = authentication.getName();
-        postService.likePost(id, username);
-        return ResponseEntity.ok().build();
+        boolean isLikedNow = postService.toggleLike(id, username);
+        return ResponseEntity.ok(isLikedNow);  // 현재 좋아요 상태 전달
     }
 
     // 게시글 추천 취소
@@ -210,11 +210,4 @@ public class PostController {
                 .body(photoBytes);
     }
 
-    // @PostMapping("/{id}/like")
-    // public ResponseEntity<Boolean> toggleLikePost(@PathVariable Long id, Authentication authentication) {
-    //     String username = authentication.getName();
-    //     boolean isLiked = postService.toggleLike(id, username);
-    //     // isLiked 값을 응답 본문(body)에 담아서 반환
-    //     return ResponseEntity.ok(isLiked); 
-    // }
 }
