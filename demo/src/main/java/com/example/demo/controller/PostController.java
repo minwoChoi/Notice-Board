@@ -52,7 +52,8 @@ public class PostController {
         PostDetailResponse responseDto = new PostDetailResponse();
         // ... postId, title, nickname 등 기존 필드 매핑 ...
         responseDto.setPostId(post.getPostId());
-        responseDto.setCategoryName(post.getCategory().getCategoryName());
+        responseDto.setCategoryId(post.getCategory().getCategoryId());
+        //responseDto.setCategoryName(post.getCategory().getCategoryName());
         responseDto.setTitle(post.getTitle());
         responseDto.setContent(post.getContent());
         responseDto.setNickname(post.getUser().getNickname());
@@ -66,11 +67,12 @@ public class PostController {
             responseDto.setPhotoUrl("/posts/" + post.getPostId() + "/photo");
         }
 
-        // 👇 작성자 프로필 사진 URL 설정 로직 추가
+        //사용자 정보
         User author = post.getUser();
         if (author.getProfilePicture() != null && author.getProfilePicture().length > 0) {
             responseDto.setAuthorProfilePictureUrl("/users/" + author.getUserId() + "/photo");
         }
+        responseDto.setUserId(author.getUserId());
 
         return ResponseEntity.ok(responseDto);
     }
@@ -193,6 +195,7 @@ public class PostController {
         return ResponseEntity.ok().build();
     }
 
+    //사진
     @GetMapping("/{id}/photo")
     public ResponseEntity<byte[]> getPostPhoto(@PathVariable Long id) {
         byte[] photoBytes = postService.getPhotoById(id); // (서비스에 이 메소드 추가 필요)
@@ -206,4 +209,12 @@ public class PostController {
                 .contentType(MediaType.IMAGE_JPEG) // 또는 IMAGE_PNG 등
                 .body(photoBytes);
     }
+
+    // @PostMapping("/{id}/like")
+    // public ResponseEntity<Boolean> toggleLikePost(@PathVariable Long id, Authentication authentication) {
+    //     String username = authentication.getName();
+    //     boolean isLiked = postService.toggleLike(id, username);
+    //     // isLiked 값을 응답 본문(body)에 담아서 반환
+    //     return ResponseEntity.ok(isLiked); 
+    // }
 }

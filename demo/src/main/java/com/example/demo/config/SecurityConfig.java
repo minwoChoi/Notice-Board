@@ -40,7 +40,9 @@ public class SecurityConfig {
     // 💡 공개적으로 접근 가능한 GET 요청 경로 추가
     private static final String[] PUBLIC_GET_URLS = {
         "/posts/",      // 전체 게시글 목록 조회
-        "/posts/{id}"   // 게시글 상세 조회
+        "/posts/{id}",   // 게시글 상세 조회
+        "/posts/{id}/photo",
+        "/users/*/photo"
     };
 
     @Bean

@@ -2,7 +2,9 @@ package com.example.demo.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,7 @@ import com.example.demo.repository.PostLikeRepository;
 import com.example.demo.repository.PostRepository;
 import com.example.demo.repository.UserRepository;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 
 @Service
@@ -211,6 +214,34 @@ public class PostService {
         post.decreaseLikeCount();
         postRepository.save(post);
     }
+    
+    @Transactional
+    public boolean toggleLike(Long postId, String username) {
+        Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new EntityNotFoundException("Post not found"));
+        User user = userRepository.findByName(username)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        Optional<PostLike> existingLikeOpt = postLikeRepository.findByPostAndUser(post, user);
+        
+        if (existingLikeOpt.isPresent()) {
+            // 이미 좋아요 되어 있으면 삭제 (좋아요 취소)
+            postLikeRepository.delete(existingLikeOpt.get());
+            post.decreaseLikeCount();
+            postRepository.save(post);
+            return false; // 현재 좋아요 취소됨 상태
+        } else {
+            // 좋아요가 없으면 새로 추가
+            PostLike newLike = new PostLike();
+            newLike.setPost(post);
+            newLike.setUser(user);
+            postLikeRepository.save(newLike);
+            post.increaseLikeCount();
+            postRepository.save(post);
+            return true; // 현재 좋아요 활성화 상태
+        }
+    }
+
     
     @Transactional(readOnly = true)
     public byte[] getPhotoById(Long postId) {
