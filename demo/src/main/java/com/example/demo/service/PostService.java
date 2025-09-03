@@ -16,7 +16,7 @@ import com.example.demo.model.Category;
 import com.example.demo.model.Post;
 import com.example.demo.model.PostLike;
 import com.example.demo.model.User;
-import org.springframework.data.domain.Pageable; 
+import org.springframework.data.domain.Pageable;
 import com.example.demo.repository.CategoryRepository;
 import com.example.demo.repository.PostLikeRepository;
 import com.example.demo.repository.PostRepository;
@@ -34,12 +34,12 @@ public class PostService {
     private final CategoryRepository categoryRepository;
     private final NotificationService notificationService;
 
-    //내가 작성한 게시물 목록 조회
-   @Transactional(readOnly = true)
+    // 내가 작성한 게시물 목록 조회
+    @Transactional(readOnly = true)
     public List<PostListResponse> findMyPosts(String userId) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        
+
         // 1. 기존 로직으로 DTO 리스트를 먼저 조회합니다.
         List<PostListResponse> responseList = postRepository.findPostsByUserWithCommentCount(user);
 
@@ -47,7 +47,7 @@ public class PostService {
         String profilePictureUrl = (user.getProfilePicture() != null && user.getProfilePicture().length > 0)
                 ? "/users/" + userId + "/photo"
                 : null;
-        
+
         // 3. 각 DTO에 작성자의 프로필 사진 URL을 설정해줍니다.
         responseList.forEach(dto -> dto.setAuthorProfilePictureUrl(profilePictureUrl));
 
@@ -55,13 +55,13 @@ public class PostService {
         return responseList;
     }
 
-    //게시글 작성
+    // 게시글 작성
     @Transactional
     public Post createPost(PostCreateRequest req, String userId) {
 
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
-                
+
         Category category = categoryRepository.findByCategoryId(req.getCategoryId())
                 .orElseThrow(() -> new IllegalArgumentException("Category not found: " + req.getCategoryId()));
 
@@ -78,11 +78,11 @@ public class PostService {
         return postRepository.save(post);
     }
 
-    //게시글 업데이트
+    // 게시글 업데이트
     @Transactional
     public Post updatePost(Long postId, PostEditRequest request, String username) {
         Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
 
         if (!post.getUser().getUserId().equals(username)) {
             throw new SecurityException("이 게시물의 작성자가 아닙니다.");
@@ -91,21 +91,24 @@ public class PostService {
         // 오직 필요할 때만 카테고리 교체
         if (request.getCategoryId() != null) {
             Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException("Category not found: " + request.getCategoryId()));
+                    .orElseThrow(() -> new IllegalArgumentException("Category not found: " + request.getCategoryId()));
             post.setCategory(category);
         }
-        if (request.getTitle() != null) post.setTitle(request.getTitle());
-        if (request.getContent() != null) post.setContent(request.getContent());
-        if (request.getPhoto() != null) post.setPhoto(request.getPhoto());
+        if (request.getTitle() != null)
+            post.setTitle(request.getTitle());
+        if (request.getContent() != null)
+            post.setContent(request.getContent());
+        if (request.getPhoto() != null)
+            post.setPhoto(request.getPhoto());
 
         return postRepository.save(post);
     }
 
-    //게시물 삭제
+    // 게시물 삭제
     @Transactional
     public void deletePost(Long postId, String username) {
         Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
 
         // 작성자 검증(로그인한 사용자가 게시글 주인인지)
         if (!post.getUser().getUserId().equals(username)) {
@@ -113,47 +116,85 @@ public class PostService {
         }
 
         postRepository.delete(post);
-}
+    }
 
-    //전체 게시물 조회
+    // 게시물 검색
     @Transactional(readOnly = true)
-    public PostPageResponse findAllPosts(Pageable pageable) {
-        // 1. JpaRepository의 기본 findAll 메소드를 호출합니다.
-        //    이 메소드는 Pageable의 정렬(Sort)과 페이지 정보를 완벽하게 SQL에 반영합니다.
-        Page<Post> postPage = postRepository.findAll(pageable);
+    public PostPageResponse searchPosts(String keyword, Pageable pageable) {
+        Page<Post> postPage = postRepository.findByTitleContainingOrContentContaining(keyword, pageable);
 
-        // 2. 조회된 엔티티(Post) Page를 DTO(PostListResponse) 리스트로 변환합니다.
         List<PostListResponse> postListResponses = postPage.getContent().stream()
                 .map(post -> {
-                    // Post 엔티티를 PostListResponse DTO로 변환하는 로직
                     String photoUrl = (post.getPhoto() != null && post.getPhoto().length > 0)
                             ? "/posts/" + post.getPostId() + "/photo"
                             : null;
-                    
-                    String authorProfilePictureUrl = (post.getUser().getProfilePicture() != null && post.getUser().getProfilePicture().length > 0)
-                            ? "/users/" + post.getUser().getUserId() + "/photo"
-                            : null;
 
-                    // DTO 생성자를 사용하여 변환
+                    String authorProfilePictureUrl = (post.getUser().getProfilePicture() != null
+                            && post.getUser().getProfilePicture().length > 0)
+                                    ? "/users/" + post.getUser().getUserId() + "/photo"
+                                    : null;
+
+                    // ▼▼▼ [수정] DTO 생성자와 파라미터 순서를 정확히 일치시킵니다 ▼▼▼
                     return new PostListResponse(
-                        post.getPostId(),
-                        post.getCategory().getCategoryName(),
-                        post.getTitle(),
-                        post.getUser().getNickname(),
-                        post.getCreatedDate(),
-                        post.getViewCount(),
-                        post.getLikeCount(),
-                        (long) post.getComments().size(), // N+1 문제가 발생할 수 있는 지점
-                        photoUrl,
-                        authorProfilePictureUrl
+                            post.getPostId(),
+                            post.getUser().getUserId(), // 2. userId
+                            post.getCategory().getCategoryId(), // 3. categoryId
+                            post.getCategory().getCategoryName(), // 4. categoryName
+                            post.getTitle(), // 5. title
+                            post.getContent(),
+                            post.getUser().getNickname(), // 6. nickname
+                            post.getCreatedDate(), // 7. createdDate
+                            post.getViewCount(), // 8. viewCount
+                            post.getLikeCount(), // 9. likeCount
+                            (long) post.getComments().size(), // 10. commentCount
+                            photoUrl, // 11. photoUrl
+                            authorProfilePictureUrl // 12. authorProfilePictureUrl
                     );
                 })
                 .toList();
 
-        // 3. 최종적으로 DTO 리스트와 전체 게시물 수를 담아 반환합니다.
         return new PostPageResponse(postListResponses, postPage.getTotalElements());
     }
-    //특정 게시물 조회
+
+    // 전체 게시물 조회
+    @Transactional(readOnly = true)
+    public PostPageResponse findAllPosts(Pageable pageable) {
+        Page<Post> postPage = postRepository.findAll(pageable);
+
+        List<PostListResponse> postListResponses = postPage.getContent().stream()
+                .map(post -> {
+                    String photoUrl = (post.getPhoto() != null && post.getPhoto().length > 0)
+                            ? "/posts/" + post.getPostId() + "/photo"
+                            : null;
+
+                    String authorProfilePictureUrl = (post.getUser().getProfilePicture() != null
+                            && post.getUser().getProfilePicture().length > 0)
+                                    ? "/users/" + post.getUser().getUserId() + "/photo"
+                                    : null;
+
+                    // ▼▼▼ [수정] DTO 생성자와 파라미터 순서를 정확히 일치시킵니다 ▼▼▼
+                    return new PostListResponse(
+                            post.getPostId(),
+                            post.getUser().getUserId(), // 2. userId
+                            post.getCategory().getCategoryId(), // 3. categoryId
+                            post.getCategory().getCategoryName(), // 4. categoryName
+                            post.getTitle(), // 5. title
+                            post.getContent(),
+                            post.getUser().getNickname(), // 6. nickname
+                            post.getCreatedDate(), // 7. createdDate
+                            post.getViewCount(), // 8. viewCount
+                            post.getLikeCount(), // 9. likeCount
+                            (long) post.getComments().size(), // 10. commentCount
+                            photoUrl, // 11. photoUrl
+                            authorProfilePictureUrl // 12. authorProfilePictureUrl
+                    );
+                })
+                .toList();
+
+        return new PostPageResponse(postListResponses, postPage.getTotalElements());
+    }
+
+    // 특정 게시물 조회
     @Transactional
     public Post findPostById(Long postId, String username) {
         Post post = postRepository.findByIdWithDetails(postId)
@@ -191,18 +232,17 @@ public class PostService {
         // [추가] 게시글 작성자에게 좋아요 알림 전송 (본인 글 아닐 때만)
         if (!user.getUserId().equals(post.getUser().getUserId())) {
             String message = user.getNickname() + "님이 회원님의 게시물을 추천했습니다.";
-            notificationService.createNotification(post.getUser(), message, post, null /*댓글 x*/);
+            notificationService.createNotification(post.getUser(), message, post, null /* 댓글 x */);
         }
     }
 
-    //게시물 추천 취소
+    // 게시물 추천 취소
     @Transactional
     public void unlikePost(Long postId, String userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
 
         PostLike like = postLikeRepository.findByPostAndUser(post, user)
                 .orElseThrow(() -> new IllegalArgumentException("추천하지 않은 게시글입니다."));
@@ -213,15 +253,17 @@ public class PostService {
         post.decreaseLikeCount();
         postRepository.save(post);
     }
-    
+
+    // 게시물 사진 출력
     @Transactional(readOnly = true)
     public byte[] getPhotoById(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
-        
+
         return post.getPhoto();
     }
 
+    // 토글 좋아요
     @Transactional
     public boolean toggleLike(Long postId, String userId) {
         Post post = postRepository.findById(postId)
@@ -234,7 +276,7 @@ public class PostService {
             postLikeRepository.delete(existing.get());
             post.decreaseLikeCount();
             postRepository.save(post);
-            return false;  // 좋아요 취소됨
+            return false; // 좋아요 취소됨
         } else {
             PostLike newLike = new PostLike();
             newLike.setPost(post);
@@ -246,12 +288,11 @@ public class PostService {
             // 좋아요 알림 전송: 작성자와 좋아요 누른 사용자가 다를 경우에만
             if (!user.getUserId().equals(post.getUser().getUserId())) {
                 String message = user.getNickname() + "님이 회원님의 게시물을 추천했습니다.";
-                notificationService.createNotification(post.getUser(), message, post, null /*댓글 없음*/);
+                notificationService.createNotification(post.getUser(), message, post, null /* 댓글 없음 */);
             }
 
-            return true;   // 좋아요 추가됨
+            return true; // 좋아요 추가됨
         }
     }
-
 
 }

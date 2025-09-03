@@ -11,6 +11,8 @@ import lombok.Setter;
 @NoArgsConstructor
 public class PostListResponse {
     private Long postId;
+    private String userId;
+    private Long categoryId;
     private String categoryName;
     private String title;
     private String content;
@@ -23,12 +25,15 @@ public class PostListResponse {
     private boolean isBlocked;
     private Long commentCount;
     // JPQL 결과를 직접 매핑하기 위한 생성자 수정 (기존 유지)
-    public PostListResponse(Long postId, String categoryName, String title, String nickname, 
+    public PostListResponse(Long postId, String userId, Long categoryId,String categoryName, String title, String content,String nickname, 
     LocalDateTime createdDate, int viewCount, int likeCount, Long commentCount,
     String photoUrl, String authorProfilePictureUrl) {
         this.postId = postId;
+        this.userId = userId;
+        this.categoryId = categoryId;
         this.categoryName = categoryName;
         this.title = title;
+        this.content = content;
         this.nickname = nickname;
         this.createdDate = createdDate;
         this.viewCount = viewCount;

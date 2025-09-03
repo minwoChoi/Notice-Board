@@ -56,7 +56,6 @@ public class PostController {
 
         // 게시글 데이터를 PostDetailResponse DTO에 매핑
         PostDetailResponse responseDto = new PostDetailResponse();
-        // ... postId, title, nickname 등 기존 필드 매핑 ...
         responseDto.setPostId(post.getPostId());
         responseDto.setCategoryId(post.getCategory().getCategoryId());
         //responseDto.setCategoryName(post.getCategory().getCategoryName());
@@ -79,7 +78,6 @@ public class PostController {
             responseDto.setAuthorProfilePictureUrl("/users/" + author.getUserId() + "/photo");
         }
         responseDto.setUserId(author.getUserId());
-
         return ResponseEntity.ok(responseDto);
     }
 
@@ -166,6 +164,7 @@ public class PostController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+    
     // 게시글 수정 (수정된 방식)
     @PatchMapping(value = "/{id}", consumes = { "multipart/form-data" })
     public ResponseEntity<PostEditResponse> updatePost(
@@ -204,12 +203,43 @@ public class PostController {
 
         return ResponseEntity.ok(response);
     }
+    
     // 게시글 삭제
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePost(@PathVariable Long id, Authentication authentication) {
         String username = authentication.getName();
         postService.deletePost(id, username);
         return ResponseEntity.noContent().build();
+    }
+
+    //게시글 검색
+    @GetMapping("/search")
+    public ResponseEntity<PostPageResponse> searchPosts(
+            @RequestParam("keyword") String keyword, // 검색 키워드
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "12") int size,
+            @RequestParam(name = "sortCode", defaultValue = "0") int sortCode) {
+
+        // 정렬 로직은 기존 getAllPosts와 동일합니다.
+        Sort sort;
+        switch (sortCode) {
+            case 1:
+                sort = Sort.by(Sort.Direction.DESC, "likeCount");
+                break;
+            case 2:
+                sort = Sort.by(Sort.Direction.DESC, "viewCount");
+                break;
+            default:
+                sort = Sort.by(Sort.Direction.DESC, "createdDate");
+                break;
+        }
+        
+        int zeroBasedPage = Math.max(0, page - 1);
+        Pageable pageable = PageRequest.of(zeroBasedPage, size, sort);
+
+        // 검색 서비스 호출
+        PostPageResponse response = postService.searchPosts(keyword, pageable);
+        return ResponseEntity.ok(response);
     }
 
     // 게시글 추천

@@ -24,12 +24,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
            "WHERE p.postId = :id")
     Optional<Post> findByIdWithDetails(@Param("id") Long id);
 
-    // [삭제] 이 복잡한 JPQL 쿼리 대신, 서비스 계층에서 DTO로 변환하는 방식을 사용할 것입니다.
-    // Page<PostListResponse> findAllWithCommentCount(Pageable pageable);
-
-    // [수정] 내 게시물 조회 쿼리의 생성자를 DTO와 일치시키고, GROUP BY 추가 및 photo 필드 검사를 수정합니다.
+    // ▼▼▼ [수정] DTO 생성자와 파라미터 순서를 일치시킵니다 ▼▼▼
     @Query("SELECT new com.example.demo.dto.post.response.PostListResponse(" +
-           "p.postId, p.category.categoryName, p.title, p.user.nickname, " +
+           "p.postId, " +
+           "p.user.userId, " +
+           "p.category.categoryId, " +
+           "p.category.categoryName, " +
+           "p.title, " +
+           "p.content, " + // <-- 여기에 p.content 추가
+           "p.user.nickname, " +
            "p.createdDate, p.viewCount, p.likeCount, COUNT(c), " +
            "CASE WHEN p.photo IS NOT NULL THEN CONCAT('/posts/', p.postId, '/photo') ELSE NULL END, " +
            "CASE WHEN p.user.profilePicture IS NOT NULL THEN CONCAT('/users/', p.user.userId, '/photo') ELSE NULL END" +
@@ -37,10 +40,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
            "FROM Post p " +
            "LEFT JOIN p.comments c ON c.post = p " +
            "WHERE p.user = :user " +
-           "GROUP BY p.postId, p.category.categoryName, p.title, p.user.nickname, p.createdDate, p.viewCount, p.likeCount, p.photo, p.user.profilePicture, p.user.userId " +
+           "GROUP BY p.postId, p.user.userId, p.category.categoryId, p.category.categoryName, p.title, p.content, p.user.nickname, p.createdDate, p.viewCount, p.likeCount, p.photo, p.user.profilePicture " + // <-- GROUP BY 절에도 p.content 추가
            "ORDER BY p.createdDate DESC")
     List<PostListResponse> findPostsByUserWithCommentCount(@Param("user") User user);
 
-    // [삭제] 이 쿼리도 사용하지 않습니다.
-    // Page<Post> findAllPostsWithDetails(Pageable pageable);
+    // 검색 쿼리 (수정 없음)
+    @Query("SELECT p FROM Post p WHERE p.title LIKE %:keyword% OR p.content LIKE %:keyword%")
+    Page<Post> findByTitleContainingOrContentContaining(@Param("keyword") String keyword, Pageable pageable);
 }
