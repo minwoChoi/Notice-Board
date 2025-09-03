@@ -23,20 +23,18 @@ public class PostListResponse {
     private boolean isBlocked;
     private Long commentCount;
     // JPQL 결과를 직접 매핑하기 위한 생성자 수정 (기존 유지)
-    public PostListResponse(Long postId, String categoryName, String title, String content, byte[] photo, 
-                            String nickname, LocalDateTime createdDate, int likeCount, int viewCount, Long commentCount) {
+    public PostListResponse(Long postId, String categoryName, String title, String nickname, 
+    LocalDateTime createdDate, int viewCount, int likeCount, Long commentCount,
+    String photoUrl, String authorProfilePictureUrl) {
         this.postId = postId;
         this.categoryName = categoryName;
         this.title = title;
-        this.content = content;
         this.nickname = nickname;
         this.createdDate = createdDate;
-        this.likeCount = likeCount;
         this.viewCount = viewCount;
+        this.likeCount = likeCount;
         this.commentCount = commentCount;
-
-        if (photo != null && photo.length > 0) {
-            this.photoUrl = "/posts/" + postId + "/photo";
-        }
+        this.photoUrl = photoUrl;
+        this.authorProfilePictureUrl = authorProfilePictureUrl;
     }
 }

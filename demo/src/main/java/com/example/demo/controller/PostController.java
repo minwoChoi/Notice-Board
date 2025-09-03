@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import java.io.IOException;
 import java.util.List;
 
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,9 +25,14 @@ import com.example.demo.dto.post.request.PostEditRequest;
 import com.example.demo.dto.post.response.PostDetailResponse;
 import com.example.demo.dto.post.response.PostEditResponse;
 import com.example.demo.dto.post.response.PostListResponse;
+import com.example.demo.dto.post.response.PostPageResponse;
 import com.example.demo.model.Post;
 import com.example.demo.model.User;
 import com.example.demo.service.PostService;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+
+import org.springframework.data.domain.Sort;
 
 import lombok.AllArgsConstructor;
 
@@ -79,10 +85,36 @@ public class PostController {
 
     // 전체 게시글 목록 조회
     @GetMapping("/")
-    public ResponseEntity<List<PostListResponse>> getAllPosts() {
-        // 서비스가 직접 DTO 리스트를 반환하므로, 받아서 그대로 응답하면 끝입니다.
-        List<PostListResponse> responseList = postService.findAllPosts();
-        return ResponseEntity.ok(responseList);
+    public ResponseEntity<PostPageResponse> getAllPosts(
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "12") int size,
+            @RequestParam(name = "sortCode", defaultValue = "0") int sortCode) { // 파라미터 이름을 sortCode로 변경
+
+        // 1. 정렬 코드에 따라 Sort 객체 생성
+        Sort sort;
+        switch (sortCode) {
+            case 1:
+                // 좋아요 순
+                sort = Sort.by(Sort.Direction.DESC, "likeCount");
+                break;
+            case 2:
+                // 조회수 순 (추천순)
+                sort = Sort.by(Sort.Direction.DESC, "viewCount");
+                break;
+            default:
+                // 0 또는 그 외의 모든 경우 (최신순)
+                sort = Sort.by(Sort.Direction.DESC, "createdDate");
+                break;
+        }
+        
+        int zeroBasedPage = Math.max(0, page - 1); 
+
+        // 2. Pageable 객체 생성
+        Pageable pageable = PageRequest.of(zeroBasedPage, size, sort);
+
+        // 3. 서비스 호출
+        PostPageResponse response = postService.findAllPosts(pageable);
+        return ResponseEntity.ok(response);
     }
 
     // 게시글 작성 (수정된 방식)
@@ -160,6 +192,7 @@ public class PostController {
         // 응답 생성 로직은 동일
         PostEditResponse response = new PostEditResponse();
         response.setPostId(updatedPost.getPostId());
+        response.setCategoryId(updatedPost.getCategory().getCategoryId());
         response.setCategoryName(updatedPost.getCategory().getCategoryName());
         response.setTitle(updatedPost.getTitle());
         response.setContent(updatedPost.getContent());

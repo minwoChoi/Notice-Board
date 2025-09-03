@@ -3,7 +3,7 @@ package com.example.demo.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-
+import org.springframework.data.domain.Page;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,15 +11,16 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.demo.dto.post.request.PostCreateRequest;
 import com.example.demo.dto.post.request.PostEditRequest;
 import com.example.demo.dto.post.response.PostListResponse;
+import com.example.demo.dto.post.response.PostPageResponse;
 import com.example.demo.model.Category;
 import com.example.demo.model.Post;
 import com.example.demo.model.PostLike;
 import com.example.demo.model.User;
+import org.springframework.data.domain.Pageable; 
 import com.example.demo.repository.CategoryRepository;
 import com.example.demo.repository.PostLikeRepository;
 import com.example.demo.repository.PostRepository;
 import com.example.demo.repository.UserRepository;
-
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 
@@ -116,44 +117,42 @@ public class PostService {
 
     //전체 게시물 조회
     @Transactional(readOnly = true)
-    public List<PostListResponse> findAllPosts() {
-        // 1. Repository에서 User 정보가 포함된 Post 엔티티 목록을 조회합니다.
-        List<Post> posts = postRepository.findAllPostsWithDetails();
+    public PostPageResponse findAllPosts(Pageable pageable) {
+        // 1. JpaRepository의 기본 findAll 메소드를 호출합니다.
+        //    이 메소드는 Pageable의 정렬(Sort)과 페이지 정보를 완벽하게 SQL에 반영합니다.
+        Page<Post> postPage = postRepository.findAll(pageable);
 
-        // 2. Post 엔티티 목록을 PostListResponse DTO 목록으로 변환합니다.
-        return posts.stream()
+        // 2. 조회된 엔티티(Post) Page를 DTO(PostListResponse) 리스트로 변환합니다.
+        List<PostListResponse> postListResponses = postPage.getContent().stream()
                 .map(post -> {
-                    User author = post.getUser();
-                    
-                    // 3. 작성자의 프로필 사진 URL을 생성합니다.
-                    String authorProfilePictureUrl = (author.getProfilePicture() != null && author.getProfilePicture().length > 0)
-                            ? "/users/" + author.getUserId() + "/photo"
+                    // Post 엔티티를 PostListResponse DTO로 변환하는 로직
+                    String photoUrl = (post.getPhoto() != null && post.getPhoto().length > 0)
+                            ? "/posts/" + post.getPostId() + "/photo"
                             : null;
                     
-                    // 4. PostListResponse DTO를 생성하고 필드를 설정합니다.
-                    PostListResponse dto = new PostListResponse();
-                    dto.setPostId(post.getPostId());
-                    dto.setCategoryName(post.getCategory().getCategoryName());
-                    dto.setTitle(post.getTitle());
-                    dto.setContent(post.getContent());
-                    dto.setNickname(author.getNickname());
-                    dto.setCreatedDate(post.getCreatedDate());
-                    dto.setLikeCount(post.getLikeCount());
-                    dto.setViewCount(post.getViewCount());
-                    dto.setCommentCount((long) post.getComments().size()); // 댓글 수 설정
-                    dto.setAuthorProfilePictureUrl(authorProfilePictureUrl);
-                    dto.setBlocked(post.isBlocked());
+                    String authorProfilePictureUrl = (post.getUser().getProfilePicture() != null && post.getUser().getProfilePicture().length > 0)
+                            ? "/users/" + post.getUser().getUserId() + "/photo"
+                            : null;
 
-                    if (post.getPhoto() != null && post.getPhoto().length > 0) {
-                        dto.setPhotoUrl("/posts/" + post.getPostId() + "/photo");
-                    }
-
-                    
-                    return dto;
+                    // DTO 생성자를 사용하여 변환
+                    return new PostListResponse(
+                        post.getPostId(),
+                        post.getCategory().getCategoryName(),
+                        post.getTitle(),
+                        post.getUser().getNickname(),
+                        post.getCreatedDate(),
+                        post.getViewCount(),
+                        post.getLikeCount(),
+                        (long) post.getComments().size(), // N+1 문제가 발생할 수 있는 지점
+                        photoUrl,
+                        authorProfilePictureUrl
+                    );
                 })
                 .toList();
+
+        // 3. 최종적으로 DTO 리스트와 전체 게시물 수를 담아 반환합니다.
+        return new PostPageResponse(postListResponses, postPage.getTotalElements());
     }
-    
     //특정 게시물 조회
     @Transactional
     public Post findPostById(Long postId, String username) {
