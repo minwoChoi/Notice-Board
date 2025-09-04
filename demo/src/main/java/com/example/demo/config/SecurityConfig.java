@@ -59,6 +59,7 @@ public class SecurityConfig {
                 // --- 경로별 인가 규칙 설정 ---
                 .authorizeHttpRequests(authorize ->
                         authorize
+                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                 // 기존 공개 경로 허용
                                 .requestMatchers(PUBLIC_URLS).permitAll()
                                 .requestMatchers(HttpMethod.POST, "/users/").permitAll()
@@ -89,10 +90,13 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.addAllowedOriginPattern("http://localhost:3000");
         configuration.addAllowedOriginPattern("http://127.0.0.1:3000");
+        configuration.addAllowedOriginPattern("http://192.168.0.166:3000"); // 만약 프론트가 이 주소에서 실행된다면
+        configuration.addAllowedOriginPattern("http://192.168.0.166"); 
+        
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
         configuration.setAllowCredentials(true);
-
+        
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

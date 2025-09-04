@@ -1,12 +1,9 @@
+# src/main/resources/application.yml
+
 spring:
-  datasource:
-    url: jdbc:postgresql://${SPRING_DATASOURCE_HOST:localhost}:5432/test-db
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:eg}
-  data:
-    redis:
-      host: ${SPRING_REDIS_HOST:localhost}
-      port: ${SPRING_REDIS_PORT:6379}
+  # IDE 등에서 바로 실행 시 기본적으로 local 프로필이 활성화됩니다.
+  profiles:
+    active: local
   jpa:
     hibernate:
       ddl-auto: update
@@ -19,22 +16,16 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
-jwt:
-  secret: ksdf98asjkdln9081u9023ndfoiqwernvsdfiu23ndf8923
-
-logging:
-  level:
-    org:
-      springframework: info
-      zerock: debug
-
+# springdoc 등 다른 공통 설정은 여기에 유지합니다.
 springdoc:
   api-docs:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
-    enabled: true
-    config-url: /api-docs/swagger-config
-    url: /api-docs
-  default-produces-media-type: application/json
-  default-consumes-media-type: application/json
+
+# 로깅 레벨 설정
+logging:
+  level:
+    org:
+      springframework: info
+      zerock: debug

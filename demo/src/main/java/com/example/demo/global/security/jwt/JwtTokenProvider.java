@@ -14,10 +14,10 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import com.example.demo.repository.RedisDao;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
 import java.util.stream.Collectors;
@@ -29,14 +29,16 @@ public class JwtTokenProvider {
     private final Key key;
     private final RedisDao redisDao; // RefreshToken 저장을 위해 Redis 사용
 
-    public static final String GRANT_TYPE = "Bearer"; // 컨트롤러에서도 재사용 가능
+    public static final String GRANT_TYPE = "Bearer";
     public static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60; // 60분
     public static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24; // 1일
 
     public JwtTokenProvider(@Value("${jwt.secret}") String secretKey,
                             RedisDao redisDao) {
-        // 안전한 방식으로 Base64 디코딩
-        byte[] keyBytes = Base64.getEncoder().encode(secretKey.getBytes());
+        // ⭐️⭐️⭐️ 수정된 부분 ⭐️⭐️⭐️
+        // secretKey 문자열을 그대로 UTF-8 바이트 배열로 변환하여 키를 생성합니다.
+        // 불필요한 Base64 인코딩을 제거했습니다.
+        byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.redisDao = redisDao;
     }
@@ -100,14 +102,14 @@ public class JwtTokenProvider {
         }
 
         Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth").toString().split(","))
-            .map(SimpleGrantedAuthority::new)  // "ROLE_USER", "ROLE_ADMIN" 그대로 전달
+            .map(SimpleGrantedAuthority::new)
             .toList();
 
         UserDetails principal = new User(claims.getSubject(), "", authorities);
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
-
-    /** JWT 파싱 */
+    
+    /** JWT 파싱 (만료된 토큰도 내용 확인 가능하도록) */
     private Claims parseClaims(String accessToken) {
         try {
             return Jwts.parserBuilder()
@@ -116,6 +118,7 @@ public class JwtTokenProvider {
                     .parseClaimsJws(accessToken)
                     .getBody();
         } catch (ExpiredJwtException e) {
+            // 만료된 토큰의 경우에도 Claim 자체는 반환
             return e.getClaims();
         }
     }
@@ -128,7 +131,7 @@ public class JwtTokenProvider {
                     .build()
                     .parseClaimsJws(token);
             return true;
-        } catch (SecurityException | MalformedJwtException e) {
+        } catch (io.jsonwebtoken.security.SignatureException | MalformedJwtException e) {
             log.info("Invalid JWT Token", e);
         } catch (ExpiredJwtException e) {
             log.info("Expired JWT Token", e);

@@ -4,10 +4,11 @@ services:
   db:
     image: postgres:15
     container_name: eg-postgres-db
+    # .env 파일의 변수를 사용하도록 변경합니다.
     environment:
-      POSTGRES_DB: test-db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: eg
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -27,12 +28,11 @@ services:
     container_name: eg-spring-app
     ports:
       - "8080:8080"
-    environment:
-      SPRING_DATASOURCE_HOST: db
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: eg
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
+    # ⭐️⭐️⭐️ 변경된 부분 ⭐️⭐️⭐️
+    # .env 파일을 읽어 컨테이너에 환경 변수로 주입합니다.
+    # 이렇게 하면 민감한 정보와 환경별 설정을 코드와 분리할 수 있습니다.
+    env_file:
+      - .env
     depends_on:
       - db
       - redis

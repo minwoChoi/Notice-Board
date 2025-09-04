@@ -72,10 +72,10 @@ public class AuthController {
         // 5) Access Token 쿠키 세팅
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", jwtToken.getAccessToken())
                 .httpOnly(true)     // JavaScript 접근 불가(XSS 방어)
-                .secure(true)       // HTTPS 에서만 전송 (개발 중이면 false 가능)
+                .secure(false)       // HTTPS 에서만 전송 (개발 중이면 false 가능)
                 .path("/")
                 .maxAge(60 * 60)    // 1시간
-                .sameSite("Strict") // CSRF 방지
+                .sameSite("Lax") // CSRF 방지
                 .build();
     
         // 6) 쿠키를 response 헤더에 추가

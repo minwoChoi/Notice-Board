@@ -1,0 +1,17 @@
+# src/main/resources/application-prod.yml
+
+spring:
+  datasource:
+    # Docker 네트워크 내에서는 서비스 이름(db)으로 접근합니다.
+    url: jdbc:postgresql://db:5432/${POSTGRES_DB}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  data:
+    redis:
+      # Docker 네트워크 내에서는 서비스 이름(redis)으로 접근합니다.
+      host: redis
+      port: 6379
+
+jwt:
+  # .env 파일 -> docker-compose.yml -> 컨테이너 환경 변수로 주입된 값을 사용합니다.
+  secret: ${JWT_SECRET}
