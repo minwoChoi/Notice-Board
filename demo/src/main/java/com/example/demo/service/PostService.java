@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -8,8 +9,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.demo.dto.comment.response.CommentResponse;
 import com.example.demo.dto.post.request.PostCreateRequest;
 import com.example.demo.dto.post.request.PostEditRequest;
+import com.example.demo.dto.post.response.PostDetailResponse;
 import com.example.demo.dto.post.response.PostListResponse;
 import com.example.demo.dto.post.response.PostPageResponse;
 import com.example.demo.model.Category;
@@ -18,12 +21,15 @@ import com.example.demo.model.PostLike;
 import com.example.demo.model.User;
 import org.springframework.data.domain.Pageable;
 import com.example.demo.repository.CategoryRepository;
+import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.repository.PostLikeRepository;
 import com.example.demo.repository.PostRepository;
+import com.example.demo.repository.ScrapRepository;
 import com.example.demo.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
-
+import com.example.demo.model.Comment; 
+import java.util.Collections; 
 @Service
 @AllArgsConstructor
 public class PostService {
@@ -33,7 +39,8 @@ public class PostService {
     private final PostLikeRepository postLikeRepository;
     private final CategoryRepository categoryRepository;
     private final NotificationService notificationService;
-
+    private final CommentLikeRepository commentLikeRepository;
+    private final ScrapRepository scrapRepository;
     // 내가 작성한 게시물 목록 조회
     @Transactional(readOnly = true)
     public List<PostListResponse> findMyPosts(String userId) {
@@ -210,6 +217,61 @@ public class PostService {
         // 로그인 여부와 관계없이 조회수는 증가시킵니다.
         post.increaseViewCount();
         return post;
+    }
+
+    @Transactional
+    public PostDetailResponse getPostDetail(Long postId, String username) {
+        // 1. 기존 메서드를 호출하여 Post 엔티티를 가져옵니다.
+        Post post = this.findPostById(postId, username);
+
+        // 2. 게시물 자체의 '좋아요', '스크랩' 여부를 확인합니다.
+        boolean isPostLiked = false;
+        boolean isPostScrapped = false;
+        if (username != null) {
+            isPostLiked = postLikeRepository.existsByPost_PostIdAndUser_UserId(postId, username);
+            isPostScrapped = scrapRepository.existsByPost_PostIdAndUser_UserId(postId, username);
+        }
+
+        // 3. 댓글 목록의 '작성자', '좋아요' 여부를 확인합니다.
+        List<Comment> comments = post.getComments();
+        Set<Long> likedCommentIds = (username != null && !comments.isEmpty())
+            ? commentLikeRepository.findLikedCommentIdsByUserAndComments(username, comments)
+            : Collections.emptySet();
+        List<CommentResponse> commentResponses = comments.stream()
+            .map(comment -> {
+                boolean isAuthor = username != null && username.equals(comment.getUser().getUserId());
+                boolean isLiked = likedCommentIds.contains(comment.getCommentId());
+                return new CommentResponse(comment, isAuthor, isLiked);
+            })
+            .toList();
+
+        // 4. 모든 정보를 종합하여 최종 PostDetailResponse DTO를 조립합니다.
+        PostDetailResponse responseDto = new PostDetailResponse();
+        responseDto.setPostId(post.getPostId());
+        responseDto.setCategoryId(post.getCategory().getCategoryId());
+        responseDto.setTitle(post.getTitle());
+        responseDto.setContent(post.getContent());
+        responseDto.setNickname(post.getUser().getNickname());
+        responseDto.setCreatedDate(post.getCreatedDate());
+        responseDto.setLikeCount(post.getLikeCount());
+        responseDto.setViewCount(post.getViewCount());
+        responseDto.setComments(commentResponses);
+        responseDto.setBlocked(post.isBlocked());
+
+        if (post.getPhoto() != null && post.getPhoto().length > 0) {
+            responseDto.setPhotoUrl("/posts/" + post.getPostId() + "/photo");
+        }
+        User author = post.getUser();
+        if (author.getProfilePicture() != null && author.getProfilePicture().length > 0) {
+            responseDto.setAuthorProfilePictureUrl("/users/" + author.getUserId() + "/photo");
+        }
+        
+        boolean isPostAuthor = username != null && username.equals(author.getUserId());
+        responseDto.setAuthor(isPostAuthor);
+        responseDto.setLiked(isPostLiked);
+        responseDto.setScrapped(isPostScrapped);
+
+        return responseDto;
     }
 
     // 게시글 좋아요

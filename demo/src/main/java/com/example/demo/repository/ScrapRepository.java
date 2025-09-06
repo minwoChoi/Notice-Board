@@ -4,9 +4,9 @@ package com.example.demo.repository;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository; // Query 어노테이션 import
-import org.springframework.data.jpa.repository.Query; // Param 어노테이션 import
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query; // Query 어노테이션 import
+import org.springframework.data.repository.query.Param; // Param 어노테이션 import
 
 import com.example.demo.model.Post;
 import com.example.demo.model.Scrap;
@@ -23,4 +23,6 @@ public interface ScrapRepository extends JpaRepository<Scrap, Long> {
            "WHERE s.user = :user " +
            "ORDER BY s.createdDate DESC")
     List<Scrap> findScrapsWithDetailsByUser(@Param("user") User user);
+
+    boolean existsByPost_PostIdAndUser_UserId(Long postId, String userId);;
 }

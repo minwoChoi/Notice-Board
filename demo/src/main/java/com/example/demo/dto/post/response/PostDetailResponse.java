@@ -22,6 +22,8 @@ public class PostDetailResponse {
     private int likeCount;
     private int viewCount;
     private String authorProfilePictureUrl;
-    private boolean isAuthor; 
+    private boolean isAuthor;
+    private boolean isLiked;
+    private boolean isScrapped; 
     private List<CommentResponse> comments;
 }

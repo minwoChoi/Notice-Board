@@ -43,52 +43,12 @@ public class PostController {
 
     private final PostService postService;
 
-    // 상세 게시글 조회
     @GetMapping("/{id}")
     public ResponseEntity<PostDetailResponse> detail(@PathVariable Long id, Authentication authentication) {
-        // 1. 현재 사용자 정보 가져오기
         String username = (authentication != null) ? authentication.getName() : null;
 
-        // 2. 서비스 호출하여 Post 엔티티 조회
-        Post post = postService.findPostById(id, username);
-
-        // 3. 댓글 목록 DTO로 변환
-        List<CommentResponse> commentResponses = post.getComments().stream()
-                .map(CommentResponse::new)
-                .toList();
-
-        // 4. 응답 DTO(PostDetailResponse) 생성 및 값 설정
-        PostDetailResponse responseDto = new PostDetailResponse();
-        responseDto.setPostId(post.getPostId());
-        responseDto.setCategoryId(post.getCategory().getCategoryId());
-        responseDto.setTitle(post.getTitle());
-        responseDto.setContent(post.getContent());
-        responseDto.setNickname(post.getUser().getNickname());
-        responseDto.setCreatedDate(post.getCreatedDate());
-        responseDto.setLikeCount(post.getLikeCount());
-        responseDto.setViewCount(post.getViewCount());
-        responseDto.setComments(commentResponses);
-
-        // 👇 [추가] isBlocked 필드 설정
-        responseDto.setBlocked(post.isBlocked());
-
-        // 게시물 사진 URL 설정
-        if (post.getPhoto() != null && post.getPhoto().length > 0) {
-            responseDto.setPhotoUrl("/posts/" + post.getPostId() + "/photo");
-        }
-
-        // 작성자 정보 및 작성자 여부 플래그 설정
-        User author = post.getUser();
-        if (author.getProfilePicture() != null && author.getProfilePicture().length > 0) {
-            responseDto.setAuthorProfilePictureUrl("/users/" + author.getUserId() + "/photo");
-        }
-
-        // 👇 [변경] userId 설정 코드는 DTO에서 제거되었으므로 삭제합니다.
-        // responseDto.setUserId(author.getUserId());
-
-        // 👇 [유지] isAuthor 플래그 설정 로직은 그대로 둡니다.
-        boolean isAuthor = username != null && username.equals(author.getUserId());
-        responseDto.setAuthor(isAuthor);
+        // 👇 호출하는 메서드 이름만 변경하면 됩니다.
+        PostDetailResponse responseDto = postService.getPostDetail(id, username);
 
         return ResponseEntity.ok(responseDto);
     }

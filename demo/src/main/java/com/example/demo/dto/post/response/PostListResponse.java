@@ -24,7 +24,6 @@ public class PostListResponse {
     private String authorProfilePictureUrl;
     private boolean isBlocked;
     private Long commentCount;
-    // JPQL 결과를 직접 매핑하기 위한 생성자 수정 (기존 유지)
     public PostListResponse(Long postId, String userId, Long categoryId,String categoryName, String title, String content,String nickname, 
     LocalDateTime createdDate, int viewCount, int likeCount, Long commentCount,
     String photoUrl, String authorProfilePictureUrl) {
