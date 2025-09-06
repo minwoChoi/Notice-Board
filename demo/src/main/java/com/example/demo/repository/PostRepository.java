@@ -4,11 +4,13 @@ package com.example.demo.repository;
 
 import java.util.List;
 import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
 import com.example.demo.dto.post.response.PostListResponse;
 import com.example.demo.model.Post;
 import com.example.demo.model.User;
@@ -44,6 +46,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
            "ORDER BY p.createdDate DESC")
     List<PostListResponse> findPostsByUserWithCommentCount(@Param("user") User user);
 
+    Page<Post> findByCategory(Long category, Pageable pageable);
+    
     // 검색 쿼리 (수정 없음)
     @Query("SELECT p FROM Post p WHERE p.title LIKE %:keyword% OR p.content LIKE %:keyword%")
     Page<Post> findByTitleContainingOrContentContaining(@Param("keyword") String keyword, Pageable pageable);

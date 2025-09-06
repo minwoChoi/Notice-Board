@@ -158,8 +158,15 @@ public class PostService {
 
     // 전체 게시물 조회
     @Transactional(readOnly = true)
-    public PostPageResponse findAllPosts(Pageable pageable) {
+    public PostPageResponse findAllPosts(Pageable pageable,Long category) {
         Page<Post> postPage = postRepository.findAll(pageable);
+
+         if (category == 0L) {
+            // category가 0이면 기존처럼 전체 게시글 조회
+            postPage = postRepository.findAll(pageable);
+        } else {
+            postPage = postRepository.findByCategory(category, pageable);
+        }
 
         List<PostListResponse> postListResponses = postPage.getContent().stream()
                 .map(post -> {

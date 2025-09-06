@@ -2,7 +2,7 @@ package com.example.demo.global.security.jwt;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
+// import jakarta.servlet.http.Cookie; // 💡 Cookie 임포트 주석 처리
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -60,6 +60,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter { // 1. OncePe
             return bearerToken.substring(7); // "Bearer " 다음의 토큰 값만 반환
         }
 
+        // 💡 쿠키에서 토큰을 찾는 로직 전체 주석 처리
+        /*
         // 3. 헤더에 토큰이 없다면 쿠키에서 추출
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
@@ -69,7 +71,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter { // 1. OncePe
                 }
             }
         }
+        */
         
         return null;
     }
 }
+

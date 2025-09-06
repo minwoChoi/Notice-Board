@@ -44,21 +44,23 @@ public class PostController {
     private final PostService postService;
 
     // 상세 게시글 조회
-   @GetMapping("/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<PostDetailResponse> detail(@PathVariable Long id, Authentication authentication) {
+        // 1. 현재 사용자 정보 가져오기
         String username = (authentication != null) ? authentication.getName() : null;
+
+        // 2. 서비스 호출하여 Post 엔티티 조회
         Post post = postService.findPostById(id, username);
 
-        // ... 기존 댓글 DTO 변환 로직 ...
+        // 3. 댓글 목록 DTO로 변환
         List<CommentResponse> commentResponses = post.getComments().stream()
                 .map(CommentResponse::new)
                 .toList();
 
-        // 게시글 데이터를 PostDetailResponse DTO에 매핑
+        // 4. 응답 DTO(PostDetailResponse) 생성 및 값 설정
         PostDetailResponse responseDto = new PostDetailResponse();
         responseDto.setPostId(post.getPostId());
         responseDto.setCategoryId(post.getCategory().getCategoryId());
-        //responseDto.setCategoryName(post.getCategory().getCategoryName());
         responseDto.setTitle(post.getTitle());
         responseDto.setContent(post.getContent());
         responseDto.setNickname(post.getUser().getNickname());
@@ -67,17 +69,27 @@ public class PostController {
         responseDto.setViewCount(post.getViewCount());
         responseDto.setComments(commentResponses);
 
+        // 👇 [추가] isBlocked 필드 설정
+        responseDto.setBlocked(post.isBlocked());
+
         // 게시물 사진 URL 설정
         if (post.getPhoto() != null && post.getPhoto().length > 0) {
             responseDto.setPhotoUrl("/posts/" + post.getPostId() + "/photo");
         }
 
-        //사용자 정보
+        // 작성자 정보 및 작성자 여부 플래그 설정
         User author = post.getUser();
         if (author.getProfilePicture() != null && author.getProfilePicture().length > 0) {
             responseDto.setAuthorProfilePictureUrl("/users/" + author.getUserId() + "/photo");
         }
-        responseDto.setUserId(author.getUserId());
+
+        // 👇 [변경] userId 설정 코드는 DTO에서 제거되었으므로 삭제합니다.
+        // responseDto.setUserId(author.getUserId());
+
+        // 👇 [유지] isAuthor 플래그 설정 로직은 그대로 둡니다.
+        boolean isAuthor = username != null && username.equals(author.getUserId());
+        responseDto.setAuthor(isAuthor);
+
         return ResponseEntity.ok(responseDto);
     }
 
@@ -86,7 +98,8 @@ public class PostController {
     public ResponseEntity<PostPageResponse> getAllPosts(
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "12") int size,
-            @RequestParam(name = "sortCode", defaultValue = "0") int sortCode) { // 파라미터 이름을 sortCode로 변경
+            @RequestParam(name = "sortCode", defaultValue = "0") int sortCode,
+            @RequestParam(name = "category", defaultValue = "0") Long category) { // 파라미터 이름을 sortCode로 변경
 
         // 1. 정렬 코드에 따라 Sort 객체 생성
         Sort sort;
@@ -104,14 +117,14 @@ public class PostController {
                 sort = Sort.by(Sort.Direction.DESC, "createdDate");
                 break;
         }
-        
-        int zeroBasedPage = Math.max(0, page - 1); 
+
+        int zeroBasedPage = Math.max(0, page - 1);
 
         // 2. Pageable 객체 생성
         Pageable pageable = PageRequest.of(zeroBasedPage, size, sort);
 
         // 3. 서비스 호출
-        PostPageResponse response = postService.findAllPosts(pageable);
+        PostPageResponse response = postService.findAllPosts(pageable, category);
         return ResponseEntity.ok(response);
     }
 
@@ -130,14 +143,13 @@ public class PostController {
         postCreateRequest.setCategoryId(categoryId);
 
         String userId = authentication.getName();
-        
+
         if (photo != null && !photo.isEmpty()) {
             postCreateRequest.setPhoto(photo.getBytes());
         }
-        
+
         Post savedPost = postService.createPost(postCreateRequest, userId);
 
-        
         PostListResponse response = new PostListResponse();
         response.setPostId(savedPost.getPostId());
         response.setCategoryName(savedPost.getCategory().getCategoryName());
@@ -164,7 +176,7 @@ public class PostController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-    
+
     // 게시글 수정 (수정된 방식)
     @PatchMapping(value = "/{id}", consumes = { "multipart/form-data" })
     public ResponseEntity<PostEditResponse> updatePost(
@@ -181,11 +193,11 @@ public class PostController {
         postEditRequest.setCategoryId(categoryId);
 
         String username = authentication.getName();
-        
+
         if (photo != null && !photo.isEmpty()) {
             postEditRequest.setPhoto(photo.getBytes());
         }
-        
+
         Post updatedPost = postService.updatePost(id, postEditRequest, username);
 
         // 응답 생성 로직은 동일
@@ -203,7 +215,7 @@ public class PostController {
 
         return ResponseEntity.ok(response);
     }
-    
+
     // 게시글 삭제
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePost(@PathVariable Long id, Authentication authentication) {
@@ -212,7 +224,7 @@ public class PostController {
         return ResponseEntity.noContent().build();
     }
 
-    //게시글 검색
+    // 게시글 검색
     @GetMapping("/search")
     public ResponseEntity<PostPageResponse> searchPosts(
             @RequestParam("keyword") String keyword, // 검색 키워드
@@ -233,7 +245,7 @@ public class PostController {
                 sort = Sort.by(Sort.Direction.DESC, "createdDate");
                 break;
         }
-        
+
         int zeroBasedPage = Math.max(0, page - 1);
         Pageable pageable = PageRequest.of(zeroBasedPage, size, sort);
 
@@ -247,7 +259,7 @@ public class PostController {
     public ResponseEntity<Boolean> toggleLikePost(@PathVariable Long id, Authentication authentication) {
         String username = authentication.getName();
         boolean isLikedNow = postService.toggleLike(id, username);
-        return ResponseEntity.ok(isLikedNow);  // 현재 좋아요 상태 전달
+        return ResponseEntity.ok(isLikedNow); // 현재 좋아요 상태 전달
     }
 
     // 게시글 추천 취소
@@ -258,7 +270,7 @@ public class PostController {
         return ResponseEntity.ok().build();
     }
 
-    //사진
+    // 사진
     @GetMapping("/{id}/photo")
     public ResponseEntity<byte[]> getPostPhoto(@PathVariable Long id) {
         byte[] photoBytes = postService.getPhotoById(id); // (서비스에 이 메소드 추가 필요)

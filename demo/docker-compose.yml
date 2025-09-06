@@ -28,9 +28,8 @@ services:
     container_name: eg-spring-app
     ports:
       - "8080:8080"
-    # ⭐️⭐️⭐️ 변경된 부분 ⭐️⭐️⭐️
     # .env 파일을 읽어 컨테이너에 환경 변수로 주입합니다.
-    # 이렇게 하면 민감한 정보와 환경별 설정을 코드와 분리할 수 있습니다.
+    
     env_file:
       - .env
     depends_on:

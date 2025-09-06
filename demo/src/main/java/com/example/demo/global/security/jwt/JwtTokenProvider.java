@@ -12,11 +12,11 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
-import com.example.demo.repository.RedisDao;
+// import com.example.demo.repository.RedisDao; // 💡 RedisDao 임포트 주석 처리
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
-import java.time.Duration;
+// import java.time.Duration; // 💡 Duration 임포트 주석 처리
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -27,20 +27,17 @@ import java.util.stream.Collectors;
 public class JwtTokenProvider {
 
     private final Key key;
-    private final RedisDao redisDao; // RefreshToken 저장을 위해 Redis 사용
+    // private final RedisDao redisDao; // 💡 RedisDao 필드 주석 처리
 
     public static final String GRANT_TYPE = "Bearer";
     public static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60; // 60분
     public static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24; // 1일
 
-    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey,
-                            RedisDao redisDao) {
-        // ⭐️⭐️⭐️ 수정된 부분 ⭐️⭐️⭐️
-        // secretKey 문자열을 그대로 UTF-8 바이트 배열로 변환하여 키를 생성합니다.
-        // 불필요한 Base64 인코딩을 제거했습니다.
+    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey
+                            /*, RedisDao redisDao */) { // 💡 생성자에서 RedisDao 주석 처리
         byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
         this.key = Keys.hmacShaKeyFor(keyBytes);
-        this.redisDao = redisDao;
+        // this.redisDao = redisDao;
     }
 
     /** 로그인 시 토큰 생성 (AccessToken + Redis에 RefreshToken 저장) */
@@ -59,16 +56,19 @@ public class JwtTokenProvider {
         // RefreshToken 생성 & Redis 저장
         Date refreshTokenExpire = new Date(now + REFRESH_TOKEN_EXPIRE_TIME);
         String refreshToken = generateRefreshToken(username, refreshTokenExpire);
-        redisDao.setValues(username, refreshToken, Duration.ofMillis(REFRESH_TOKEN_EXPIRE_TIME));
+        // redisDao.setValues(username, refreshToken, Duration.ofMillis(REFRESH_TOKEN_EXPIRE_TIME)); // 💡 Redis 저장 로직 주석 처리
 
-        // RefreshToken은 절대 응답에 포함하지 않음
+        // RefreshToken은 이제 응답에 포함
         return JwtToken.builder()
                 .grantType(GRANT_TYPE)
                 .accessToken(accessToken)
+                .refreshToken(refreshToken) // 💡 refreshToken을 응답에 포함하도록 수정
                 .build();
     }
 
     /** 재발급 시 (Rotation 정책 적용: RefreshToken도 새로 발급) */
+    /* 💡 Redis에 의존하는 메서드이므로 전체 주석 처리 */
+    /*
     public JwtToken generateTokenWithRefreshToken(String username, UserDetailsService userDetailsService) {
         long now = (new Date()).getTime();
 
@@ -93,6 +93,7 @@ public class JwtTokenProvider {
                 .accessToken(accessToken)
                 .build();
     }
+    */
 
     /** AccessToken으로 Authentication 생성 */
     public Authentication getAuthentication(String accessToken) {
@@ -144,10 +145,13 @@ public class JwtTokenProvider {
     }
 
     /** RefreshToken 검증 (username 기반, 클라이언트에서 전달 안 함) */
+    /* 💡 Redis에 의존하는 메서드이므로 전체 주석 처리 */
+    /*
     public boolean validateRefreshTokenByUsername(String username) {
         String redisToken = (String) redisDao.getValues(username);
         return redisToken != null && validateToken(redisToken);
     }
+    */
 
     /** 토큰에서 username 추출 */
     public String getUserNameFromToken(String token) {
@@ -164,12 +168,15 @@ public class JwtTokenProvider {
     }
 
     /** RefreshToken 삭제 */
+    /* 💡 Redis에 의존하는 메서드이므로 전체 주석 처리 */
+    /*
     public void deleteRefreshToken(String username) {
         if (username == null || username.trim().isEmpty()) {
             throw new IllegalArgumentException("Username cannot be null or empty");
         }
         redisDao.deleteValues(username);
     }
+    */
 
     /** AccessToken 생성 */
     private String generateAccessToken(String username, String authorities, Date expireDate) {
@@ -192,3 +199,4 @@ public class JwtTokenProvider {
                 .compact();
     }
 }
+

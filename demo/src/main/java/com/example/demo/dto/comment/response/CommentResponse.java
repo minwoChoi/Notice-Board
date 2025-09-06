@@ -16,10 +16,8 @@ public class CommentResponse {
     private String content;
     private int likeCount;
     private String createdDate;
-
     private String userId;
     private boolean isMine;
-    
     public CommentResponse(Comment comment) {
         this.commentId = comment.getCommentId();
         this.nickname = comment.getUser().getNickname();

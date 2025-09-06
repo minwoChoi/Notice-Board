@@ -12,9 +12,7 @@ import lombok.Setter;;
 @Setter
 public class PostDetailResponse {
     private Long postId;
-    private String userId;
     private Long categoryId ; //게시물 사진
-    //private String categoryName;
     private String title;
     private String content;
     private String photoUrl; //게시물 사진
@@ -24,5 +22,6 @@ public class PostDetailResponse {
     private int likeCount;
     private int viewCount;
     private String authorProfilePictureUrl;
-    private List<CommentResponse> comments; // 이 부분을 추가합니다
+    private boolean isAuthor; 
+    private List<CommentResponse> comments;
 }

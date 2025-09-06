@@ -7,12 +7,12 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class UserLoginRequset {
+public class UserLoginRequest {
     @Schema(description = "유저 아이디", example = "1901614")
     private String userId;
 
     @Schema(description = "비밀번호", example = "asldn417")
     private String password;
     
-    public UserLoginRequset() {}
+    public UserLoginRequest() {}
 }
