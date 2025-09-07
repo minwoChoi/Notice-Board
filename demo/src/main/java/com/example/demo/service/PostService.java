@@ -168,12 +168,12 @@ public class PostService {
     public PostPageResponse findAllPosts(Pageable pageable,Long category) {
         Page<Post> postPage = postRepository.findAll(pageable);
 
-         if (category == 0L) {
-            // category가 0이면 기존처럼 전체 게시글 조회
-            postPage = postRepository.findAll(pageable);
-        } else {
-            postPage = postRepository.findByCategory(category, pageable);
-        }
+    if(category == 0L) {
+        postPage = postRepository.findAll(pageable);
+    } else {
+        postPage = postRepository.findByCategoryId(category, pageable); // 변경된 메서드명
+    }
+
 
         List<PostListResponse> postListResponses = postPage.getContent().stream()
                 .map(post -> {

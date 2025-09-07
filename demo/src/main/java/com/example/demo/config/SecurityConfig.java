@@ -61,12 +61,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize ->
                         authorize
                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                                // 기존 공개 경로 허용
-                                .requestMatchers(PUBLIC_URLS).permitAll()
+                                .requestMatchers("/auth/login", "/auth/reissue").permitAll() // 로그인 및 토큰 재발급 경로 허용
+                                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/api-docs/**").permitAll() // Swagger 관련 경로 허용
+
                                 .requestMatchers(HttpMethod.POST, "/users/").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/users/checkId").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/users/checkNickname").permitAll()
-
+                                
                                 // 👈 변경된 부분: GET 요청에 대한 공개 경로 추가
                                 .requestMatchers(HttpMethod.GET, PUBLIC_GET_URLS).permitAll()
 

@@ -17,38 +17,41 @@ import com.example.demo.model.User;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
 
-    // 상세 조회 (수정 없음)
-    @Query("SELECT p FROM Post p " +
-           "JOIN FETCH p.user " +
-           "JOIN FETCH p.category " +
-           "LEFT JOIN FETCH p.comments c " +
-           "LEFT JOIN FETCH c.user " +
-           "WHERE p.postId = :id")
-    Optional<Post> findByIdWithDetails(@Param("id") Long id);
+       // 상세 조회 (수정 없음)
+       @Query("SELECT p FROM Post p " +
+                     "JOIN FETCH p.user " +
+                     "JOIN FETCH p.category " +
+                     "LEFT JOIN FETCH p.comments c " +
+                     "LEFT JOIN FETCH c.user " +
+                     "WHERE p.postId = :id")
+       Optional<Post> findByIdWithDetails(@Param("id") Long id);
 
-    // ▼▼▼ [수정] DTO 생성자와 파라미터 순서를 일치시킵니다 ▼▼▼
-    @Query("SELECT new com.example.demo.dto.post.response.PostListResponse(" +
-           "p.postId, " +
-           "p.user.userId, " +
-           "p.category.categoryId, " +
-           "p.category.categoryName, " +
-           "p.title, " +
-           "p.content, " + // <-- 여기에 p.content 추가
-           "p.user.nickname, " +
-           "p.createdDate, p.viewCount, p.likeCount, COUNT(c), " +
-           "CASE WHEN p.photo IS NOT NULL THEN CONCAT('/posts/', p.postId, '/photo') ELSE NULL END, " +
-           "CASE WHEN p.user.profilePicture IS NOT NULL THEN CONCAT('/users/', p.user.userId, '/photo') ELSE NULL END" +
-           ") " +
-           "FROM Post p " +
-           "LEFT JOIN p.comments c ON c.post = p " +
-           "WHERE p.user = :user " +
-           "GROUP BY p.postId, p.user.userId, p.category.categoryId, p.category.categoryName, p.title, p.content, p.user.nickname, p.createdDate, p.viewCount, p.likeCount, p.photo, p.user.profilePicture " + // <-- GROUP BY 절에도 p.content 추가
-           "ORDER BY p.createdDate DESC")
-    List<PostListResponse> findPostsByUserWithCommentCount(@Param("user") User user);
+       // ▼▼▼ [수정] DTO 생성자와 파라미터 순서를 일치시킵니다 ▼▼▼
+       @Query("SELECT new com.example.demo.dto.post.response.PostListResponse(" +
+                     "p.postId, " +
+                     "p.user.userId, " +
+                     "p.category.categoryId, " +
+                     "p.category.categoryName, " +
+                     "p.title, " +
+                     "p.content, " + // <-- 여기에 p.content 추가
+                     "p.user.nickname, " +
+                     "p.createdDate, p.viewCount, p.likeCount, COUNT(c), " +
+                     "CASE WHEN p.photo IS NOT NULL THEN CONCAT('/posts/', p.postId, '/photo') ELSE NULL END, " +
+                     "CASE WHEN p.user.profilePicture IS NOT NULL THEN CONCAT('/users/', p.user.userId, '/photo') ELSE NULL END"
+                     +
+                     ") " +
+                     "FROM Post p " +
+                     "LEFT JOIN p.comments c ON c.post = p " +
+                     "WHERE p.user = :user " +
+                     "GROUP BY p.postId, p.user.userId, p.category.categoryId, p.category.categoryName, p.title, p.content, p.user.nickname, p.createdDate, p.viewCount, p.likeCount, p.photo, p.user.profilePicture "
+                     + // <-- GROUP BY 절에도 p.content 추가
+                     "ORDER BY p.createdDate DESC")
+       List<PostListResponse> findPostsByUserWithCommentCount(@Param("user") User user);
 
-    Page<Post> findByCategory(Long category, Pageable pageable);
-    
-    // 검색 쿼리 (수정 없음)
-    @Query("SELECT p FROM Post p WHERE p.title LIKE %:keyword% OR p.content LIKE %:keyword%")
-    Page<Post> findByTitleContainingOrContentContaining(@Param("keyword") String keyword, Pageable pageable);
+       @Query("SELECT p FROM Post p WHERE p.category.categoryId = :categoryId")
+       Page<Post> findByCategoryId(@Param("categoryId") Long categoryId, Pageable pageable);
+
+       // 검색 쿼리 (수정 없음)
+       @Query("SELECT p FROM Post p WHERE p.title LIKE %:keyword% OR p.content LIKE %:keyword%")
+       Page<Post> findByTitleContainingOrContentContaining(@Param("keyword") String keyword, Pageable pageable);
 }
