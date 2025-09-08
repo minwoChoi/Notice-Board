@@ -10,7 +10,7 @@ WORKDIR /app
 
 # <폴더,파일> -> 컨테이너 안으로 복사
 COPY . .
-
+RUN chmod +x ./gradlew
 
 #   RUN : 컨테이너 안에서 특정 명령어 실행
 #   ./gradlew : Gradle Wrapper 실행
@@ -25,3 +25,4 @@ EXPOSE 8080
 
 # 개발용 실행 명령어 (파일 변경 자동 반영은 IDE나 Devtools 설정 필요)
 CMD ["./gradlew", "bootRun", "--no-daemon"]
+
