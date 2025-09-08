@@ -43,6 +43,7 @@ public class PostController {
 
     private final PostService postService;
 
+    //상세 조회
     @GetMapping("/{id}")
     public ResponseEntity<PostDetailResponse> detail(@PathVariable Long id, Authentication authentication) {
         String username = (authentication != null) ? authentication.getName() : null;

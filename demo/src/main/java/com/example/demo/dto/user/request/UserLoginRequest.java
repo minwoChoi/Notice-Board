@@ -14,5 +14,7 @@ public class UserLoginRequest {
     @Schema(description = "비밀번호", example = "asldn417")
     private String password;
     
+    private int clientType; 
+    
     public UserLoginRequest() {}
 }

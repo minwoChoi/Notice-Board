@@ -1,30 +1,33 @@
 package com.example.demo.controller;
 
-import java.util.Optional;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
-// import org.springframework.http.ResponseCookie; // 💡 주석 처리
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-// import org.springframework.security.core.context.SecurityContextHolder; // 💡 주석 처리
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
-
-
-import com.example.demo.repository.UserRepository;
-
-// import jakarta.servlet.http.HttpServletResponse; // 💡 주석 처리
-
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import com.example.demo.dto.user.response.UserLoginResponse;
 import com.example.demo.dto.user.request.UserLoginRequest;
-// import com.example.demo.dto.user.response.UserLoginResponse; // 💡 주석 처리
-import com.example.demo.model.User;
 import com.example.demo.global.security.jwt.JwtToken;
 import com.example.demo.global.security.jwt.JwtTokenProvider;
+import com.example.demo.model.User;
+import com.example.demo.repository.UserRepository;
+
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.AllArgsConstructor;
 
 @RestController
+@AllArgsConstructor
 @RequestMapping("/auth")
 public class AuthController {
 
@@ -32,70 +35,77 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public AuthController(UserRepository userRepository,
-                          PasswordEncoder passwordEncoder,
-                          JwtTokenProvider jwtTokenProvider) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtTokenProvider = jwtTokenProvider;
-    }
 
     @PostMapping("/login")
-    public ResponseEntity<JwtToken> login( // 💡 반환 타입을 JwtToken으로 변경
-            @RequestBody UserLoginRequest loginRequest
-            /*, HttpServletResponse httpResponse */ // 💡 HttpServletResponse 파라미터 주석 처리
+    public ResponseEntity<?> login(
+            @RequestBody UserLoginRequest loginRequest,
+            HttpServletResponse response // 쿠키 설정을 위해 파라미터 추가
     ) {
-        // 1) 유저 존재 여부 확인
+        System.out.println("--- 로그인 요청 수신 ---");
+        System.out.println("ID: " + loginRequest.getUserId());
+        System.out.println("Password: " + loginRequest.getPassword()); // 실제 운영 환경에서는 비밀번호를 로그로 남기지 않는 것이 좋습니다.
+        System.out.println("Client Type: " + loginRequest.getClientType());
+        System.out.println("-----------------------");
+        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+        
         Optional<User> userOptional = userRepository.findByUserId(loginRequest.getUserId());
         if (userOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-    
         User user = userOptional.get();
-    
-        // 2) 비밀번호 검사
+
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-    
-        // 3) Authentication 객체 만들기
+
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(
                         user.getUserId(),
                         null,
                         List.of(new SimpleGrantedAuthority("ROLE_USER"))
                 );
-    
-        // 4) JwtTokenProvider로 토큰 생성
-        JwtToken jwtToken = jwtTokenProvider.generateToken(authentication);
-    
-        /* 💡 쿠키 및 기존 응답 본문 생성 로직을 모두 주석 처리 */
-        /*
-        // 5) Access Token 쿠키 세팅
-        ResponseCookie accessCookie = ResponseCookie.from("accessToken", jwtToken.getAccessToken())
-                .httpOnly(true)     // JavaScript 접근 불가(XSS 방어)
-                .secure(false)       // HTTPS 에서만 전송 (개발 중이면 false 가능)
-                .path("/")
-                .maxAge(60 * 60)    // 1시간
-                .sameSite("Lax") // CSRF 방지
-                .build();
-    
-        // 6) 쿠키를 response 헤더에 추가
-        httpResponse.addHeader("Set-Cookie", accessCookie.toString());
-    
-        // 7) 바디에는 사용자 정보만
-        UserLoginResponse body = UserLoginResponse.builder()
-                .userId(user.getUserId())
-                .nickname(user.getNickname())
-                .build();
-    
-        return ResponseEntity.ok(body);
-        */
 
-        // 💡 생성된 JwtToken 객체 전체를 응답 본문에 담아 반환
-        return ResponseEntity.ok(jwtToken);
+        JwtToken jwtToken = jwtTokenProvider.generateToken(authentication);
+
+        // --- 클라이언트 타입에 따른 분기 처리 ---
+        if (loginRequest.getClientType() == 0) { // Web 클라이언트인 경우
+            // Access Token 쿠키 설정
+            Cookie accessTokenCookie = createCookie("accessToken", jwtToken.getAccessToken(), (int) (JwtTokenProvider.ACCESS_TOKEN_EXPIRE_TIME / 1000));
+            response.addCookie(accessTokenCookie);
+
+            // Refresh Token 쿠키 설정
+            Cookie refreshTokenCookie = createCookie("refreshToken", jwtToken.getRefreshToken(), (int) (JwtTokenProvider.REFRESH_TOKEN_EXPIRE_TIME / 1000));
+            response.addCookie(refreshTokenCookie);
+            
+            // 1. 프로필 사진 URL 생성 (사진이 있을 경우에만)
+            String profilePictureUrl = null;
+            if (user.getProfilePicture() != null && user.getProfilePicture().length > 0) {
+                profilePictureUrl = "/users/" + user.getUserId() + "/photo";
+            }
+
+            // 2. UserLoginResponse DTO 빌드
+            UserLoginResponse responseDto = UserLoginResponse.builder()
+                    .userId(user.getUserId())
+                    .nickname(user.getNickname())
+                    .authorProfilePictureUrl(profilePictureUrl)
+                    .build();
+
+            return ResponseEntity.ok(responseDto);
+
+        } else { // App 클라이언트(또는 그 외)인 경우
+            // 기존 방식대로 응답 본문에 토큰 전체를 포함하여 반환
+            return ResponseEntity.ok(jwtToken);
+        }
     }
-    
+    // [추가] 보안 설정을 적용한 쿠키 생성 헬퍼 메서드
+    private Cookie createCookie(String name, String value, int maxAge) {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setHttpOnly(true); // JavaScript에서 접근 불가 (XSS 방어)
+        cookie.setSecure(false);   // 개발 중에는 false, 배포 시에는 true로 변경 (HTTPS에서만 전송)
+        cookie.setPath("/");      // 모든 경로에서 쿠키 사용 가능
+        cookie.setMaxAge(maxAge); // 쿠키 만료 시간 설정 (초 단위)
+        return cookie;
+    }
     @PostMapping("/logout")
     public ResponseEntity<Void> logout( // 💡 반환 타입 및 파라미터 변경
             @RequestHeader("Authorization") String accessToken

@@ -221,10 +221,11 @@ public class PostService {
 
     @Transactional
     public PostDetailResponse getPostDetail(Long postId, String username) {
-        // 1. 기존 메서드를 호출하여 Post 엔티티를 가져옵니다.
-        Post post = this.findPostById(postId, username);
+        // findByIdWithDetails를 호출하여 연관 엔티티를 한번에 fetch하고, 조회수도 증가시킵니다.
+        Post post = postRepository.findByIdWithDetails(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+        post.increaseViewCount();
 
-        // 2. 게시물 자체의 '좋아요', '스크랩' 여부를 확인합니다.
         boolean isPostLiked = false;
         boolean isPostScrapped = false;
         if (username != null) {
@@ -232,21 +233,21 @@ public class PostService {
             isPostScrapped = scrapRepository.existsByPost_PostIdAndUser_UserId(postId, username);
         }
 
-        // 3. 댓글 목록의 '작성자', '좋아요' 여부를 확인합니다.
         List<Comment> comments = post.getComments();
         Set<Long> likedCommentIds = (username != null && !comments.isEmpty())
             ? commentLikeRepository.findLikedCommentIdsByUserAndComments(username, comments)
             : Collections.emptySet();
+            
         List<CommentResponse> commentResponses = comments.stream()
             .map(comment -> {
-                boolean isAuthor = username != null && username.equals(comment.getUser().getUserId());
-                boolean isLiked = likedCommentIds.contains(comment.getCommentId());
-                return new CommentResponse(comment, isAuthor, isLiked);
+                boolean isCommentAuthor = username != null && username.equals(comment.getUser().getUserId());
+                boolean isCommentLiked = likedCommentIds.contains(comment.getCommentId());
+                return new CommentResponse(comment, isCommentAuthor, isCommentLiked);
             })
             .toList();
 
-        // 4. 모든 정보를 종합하여 최종 PostDetailResponse DTO를 조립합니다.
         PostDetailResponse responseDto = new PostDetailResponse();
+        // ... (다른 필드 set 로직은 동일)
         responseDto.setPostId(post.getPostId());
         responseDto.setCategoryId(post.getCategory().getCategoryId());
         responseDto.setTitle(post.getTitle());
@@ -266,14 +267,21 @@ public class PostService {
             responseDto.setAuthorProfilePictureUrl("/users/" + author.getUserId() + "/photo");
         }
         
+        System.out.println("==========================================");
+        System.out.println("현재 로그인 사용자 (from Token): [" + username + "]");
+        System.out.println("게시물 작성자 ID (from DB):   [" + author.getUserId() + "]");
+        System.out.println("==========================================");
+        // ▲▲▲▲▲▲▲▲▲▲ 디버깅 코드 추가 ▲▲▲▲▲▲▲▲▲▲
+
         boolean isPostAuthor = username != null && username.equals(author.getUserId());
+        
+        
         responseDto.setAuthor(isPostAuthor);
         responseDto.setLiked(isPostLiked);
         responseDto.setScrapped(isPostScrapped);
 
         return responseDto;
     }
-
     // 게시글 좋아요
     @Transactional
     public void likePost(Long postId, String userId) {
@@ -365,3 +373,11 @@ public class PostService {
     }
 
 }
+
+/*
+ * redis 안 쓰면
+ * stateless는 1단 이걸로 하라던데 
+ * 그냥 버리라는거 아님 ?
+ * 근데 ?
+ * 그런데......
+ */
