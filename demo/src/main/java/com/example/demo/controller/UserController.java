@@ -73,7 +73,7 @@ public class UserController {
 
 
     // 회원가입 (이미지 포함)
-    @PostMapping(value = "/", consumes = { "multipart/form-data" })
+    @PostMapping(value = {"", "/"}, consumes = { "multipart/form-data" })
     public ResponseEntity<String> register(
             @RequestParam("userId") String userId,
             @RequestParam("password") String password,
@@ -131,7 +131,7 @@ public class UserController {
                 .body(photoBytes);
     }
     // 프로필 수정 (이미지 포함)
-    @PatchMapping(value = "/", consumes = { "multipart/form-data" })
+    @PatchMapping(value = {"", "/"}, consumes = { "multipart/form-data" })
     public ResponseEntity<String> editProfile(
             @RequestParam(value = "password", required = false) String password,
             @RequestParam(value = "email", required = false) String email,

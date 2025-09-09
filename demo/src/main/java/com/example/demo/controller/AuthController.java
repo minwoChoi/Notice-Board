@@ -23,7 +23,8 @@ import com.example.demo.global.security.jwt.JwtToken;
 import com.example.demo.global.security.jwt.JwtTokenProvider;
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
-
+import com.example.demo.global.util.DeviceUtil; // DeviceUtil 임포트
+import jakarta.servlet.http.HttpServletRequest; // HttpServletRequest 임포트
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
@@ -42,17 +43,21 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(
             @RequestBody UserLoginRequest loginRequest,
+            HttpServletRequest request,
             HttpServletResponse response
     ) {
-        log.info("Login attempt: userId={}, Password={}, clientType={}", 
-        loginRequest.getUserId(),
-        loginRequest.getPassword(),
-        loginRequest.getClientType());
+        log.info("Request User-Agent: {}", request.getHeader("User-Agent"));
+        
+        String deviceType = DeviceUtil.getDeviceType(request);
+        log.info("[Login Attempt] User-ID: [{}], Device-Type: [{}]", 
+                 loginRequest.getUserId(), 
+                 deviceType);
 
         User user = userRepository.findByUserId(loginRequest.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            log.warn("[Login Failed] Incorrect password for User-ID: [{}]", loginRequest.getUserId());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 

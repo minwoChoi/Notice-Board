@@ -29,57 +29,43 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
 
+    // 모든 공개 허용 URL 한데 모음
     private static final String[] PUBLIC_URLS = {
-            "/auth/login",
-            "/auth/reissue",
-            "/swagger-ui/**",
-            "/swagger-ui.html",
-            "/v3/api-docs/**",
-            "/api-docs/**"
-    };
-
-    // 💡 공개적으로 접근 가능한 GET 요청 경로 추가
-    private static final String[] PUBLIC_GET_URLS = {
-        "/posts/",      // 전체 게시글 목록 조회
-        "/posts/{id}",   // 게시글 상세 조회
-        "/posts/{id}/photo",
+        "/auth/login",
+        "/auth/reissue",
+        "/swagger-ui/**", 
+        "/swagger-ui.html", 
+        "/v3/api-docs/**", 
+        "/api-docs/**",
+        "/users/checkId", 
+        "/users/checkNickname",
+        "/posts/*/photo", 
         "/users/*/photo"
     };
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity
-                // --- 기본 설정 ---
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .formLogin(AbstractHttpConfigurer::disable)
-                .logout(AbstractHttpConfigurer::disable)
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .httpBasic(b -> b.disable())
+            .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .formLogin(f -> f.disable())
+            .logout(l -> l.disable())
 
-                // --- 경로별 인가 규칙 설정 ---
-                .authorizeHttpRequests(authorize ->
-                        authorize
-                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                                .requestMatchers("/auth/login", "/auth/reissue").permitAll() // 로그인 및 토큰 재발급 경로 허용
-                                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/api-docs/**").permitAll() // Swagger 관련 경로 허용
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/users/").permitAll()
+                .requestMatchers(PUBLIC_URLS).permitAll()
+                .requestMatchers("/users/me/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/reports/posts/**").permitAll()
+                .requestMatchers("/members/role").hasRole("USER")
+                .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
-                                .requestMatchers(HttpMethod.POST, "/users/").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/users/checkId").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/users/checkNickname").permitAll()
-                                
-                                // 👈 변경된 부분: GET 요청에 대한 공개 경로 추가
-                                .requestMatchers(HttpMethod.GET, PUBLIC_GET_URLS).permitAll()
-
-                                .requestMatchers("/users/me/**").authenticated()
-                                .requestMatchers(HttpMethod.POST, "/reports/posts/**").permitAll()
-                                .requestMatchers("/members/role").hasRole("USER")
-                                .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
-                                .anyRequest().authenticated()
-                )
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
-
-        return httpSecurity.build();
+        return http.build();
     }
 
     @Bean
@@ -92,13 +78,11 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.addAllowedOriginPattern("http://localhost:3000");
         configuration.addAllowedOriginPattern("http://127.0.0.1:3000");
-        configuration.addAllowedOriginPattern("http://192.168.0.166:3000"); // 만약 프론트가 이 주소에서 실행된다면
-        configuration.addAllowedOriginPattern("http://192.168.0.166"); 
-        
+        configuration.addAllowedOriginPattern("http://192.168.0.166:3000");
+        configuration.addAllowedOriginPattern("http://192.168.0.166");
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
         configuration.setAllowCredentials(true);
-        
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

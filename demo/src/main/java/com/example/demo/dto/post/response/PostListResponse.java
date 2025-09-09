@@ -1,7 +1,6 @@
 package com.example.demo.dto.post.response;
 
 import java.time.LocalDateTime;
-
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,17 +15,32 @@ public class PostListResponse {
     private String categoryName;
     private String title;
     private String content;
-    private String photoUrl; // 게시물 자체의 사진 URL
     private String nickname;
     private LocalDateTime createdDate;
-    private int likeCount;
     private int viewCount;
-    private String authorProfilePictureUrl;
-    private boolean isBlocked;
+    private int likeCount;
     private Long commentCount;
-    public PostListResponse(Long postId, String userId, Long categoryId,String categoryName, String title, String content,String nickname, 
-    LocalDateTime createdDate, int viewCount, int likeCount, Long commentCount,
-    String photoUrl, String authorProfilePictureUrl) {
+    private boolean isBlocked; 
+    private String photoUrl;
+    private String authorProfilePictureUrl;
+    
+    // JPQL 쿼리의 파라미터 순서와 정확히 일치하는 생성자
+    public PostListResponse(
+            Long postId, 
+            String userId, 
+            Long categoryId, 
+            String categoryName, 
+            String title, 
+            String content,
+            String nickname, 
+            LocalDateTime createdDate, 
+            int viewCount, 
+            int likeCount, 
+            Long commentCount,
+            boolean isBlocked, // 12번째 파라미터
+            String photoUrl, 
+            String authorProfilePictureUrl
+    ) {
         this.postId = postId;
         this.userId = userId;
         this.categoryId = categoryId;
@@ -38,6 +52,7 @@ public class PostListResponse {
         this.viewCount = viewCount;
         this.likeCount = likeCount;
         this.commentCount = commentCount;
+        this.isBlocked = isBlocked;
         this.photoUrl = photoUrl;
         this.authorProfilePictureUrl = authorProfilePictureUrl;
     }
