@@ -223,14 +223,6 @@ public class PostController {
         return ResponseEntity.ok(isLikedNow); // 현재 좋아요 상태 전달
     }
 
-    // 게시글 추천 취소
-    @DeleteMapping("/{id}/like")
-    public ResponseEntity<Void> unlikePost(@PathVariable Long id, Authentication authentication) {
-        String username = authentication.getName();
-        postService.unlikePost(id, username);
-        return ResponseEntity.ok().build();
-    }
-
     // 사진
     @GetMapping("/{id}/photo")
     public ResponseEntity<byte[]> getPostPhoto(@PathVariable Long id) {
