@@ -1,5 +1,3 @@
-// com/example/demo/config/SecurityConfig.java
-
 package com.example.demo.config;
 
 import org.springframework.context.annotation.Bean;
@@ -57,6 +55,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/users/").permitAll()
                 .requestMatchers(PUBLIC_URLS).permitAll()
+                .requestMatchers(HttpMethod.GET, "/posts/**").permitAll() 
                 .requestMatchers("/users/me/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/reports/posts/**").permitAll()
                 .requestMatchers("/members/role").hasRole("USER")
@@ -80,6 +79,9 @@ public class SecurityConfig {
         configuration.addAllowedOriginPattern("http://127.0.0.1:3000");
         configuration.addAllowedOriginPattern("http://192.168.0.166:3000");
         configuration.addAllowedOriginPattern("http://192.168.0.166");
+        // 요청하신 IP 주소도 CORS 허용 목록에 추가하는 것이 좋습니다.
+        configuration.addAllowedOriginPattern("http://192.168.0.172:8088");
+        configuration.addAllowedOriginPattern("http://192.168.0.172:8080");
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
         configuration.setAllowCredentials(true);

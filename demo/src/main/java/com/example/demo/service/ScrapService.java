@@ -11,6 +11,7 @@ import com.example.demo.dto.scrap.response.ScrapResponseDto;
 import com.example.demo.model.Post;
 import com.example.demo.model.Scrap;
 import com.example.demo.model.User;
+import com.example.demo.model.Category;
 import com.example.demo.repository.PostRepository;
 import com.example.demo.repository.ScrapRepository;
 import com.example.demo.repository.UserRepository;
@@ -57,33 +58,33 @@ public class ScrapService {
 
     @Transactional(readOnly = true)
     public List<ScrapResponseDto> getMyScraps(String userId) {
-        // 1. userId로 User 엔티티를 조회합니다.
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        // 2. 새로 만든 Repository 메소드를 호출하여 모든 관련 정보가 포함된 스크랩 목록을 가져옵니다.
         List<Scrap> scraps = scrapRepository.findScrapsWithDetailsByUser(user);
 
-        // 3. Scrap 엔티티 목록을 ScrapResponseDto 목록으로 변환합니다.
         return scraps.stream()
                 .map(scrap -> {
-                    Post post = scrap.getPost();       // 스크랩된 게시물
-                    User author = post.getUser();      // 게시물 작성자
+                    Post post = scrap.getPost();
+                    User author = post.getUser();
+                    Category category = post.getCategory();
 
                     ScrapResponseDto dto = new ScrapResponseDto();
                     dto.setScrapId(scrap.getScrapId());
                     dto.setPostId(post.getPostId());
+                    dto.setCategoryId(category.getCategoryId());
                     dto.setPostTitle(post.getTitle());
                     dto.setPostContent(post.getContent());
                     dto.setPostCreatedDate(post.getCreatedDate());
                     dto.setAuthorNickname(author.getNickname());
+                    
+                    dto.setLikeCount(post.getLikeCount());
+                    dto.setViewCount(post.getViewCount());
+                    dto.setCommentCount(post.getComments() != null ? post.getComments().size() : 0);
 
-                    // 4. 게시물 사진 URL을 생성하여 설정합니다.
                     if (post.getPhoto() != null && post.getPhoto().length > 0) {
                         dto.setPostPhotoUrl("/posts/" + post.getPostId() + "/photo");
                     }
-
-                    // 5. 작성자 프로필 사진 URL을 생성하여 설정합니다.
                     if (author.getProfilePicture() != null && author.getProfilePicture().length > 0) {
                         dto.setAuthorProfilePictureUrl("/users/" + author.getUserId() + "/photo");
                     }

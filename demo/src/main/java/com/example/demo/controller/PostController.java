@@ -36,34 +36,7 @@ public class PostController {
     }
 
     // 전체 게시글 목록 조회
-    @GetMapping("/")
-    public ResponseEntity<PostPageResponse> getAllPosts(
-            @RequestParam(name = "page", defaultValue = "1") int page,
-            @RequestParam(name = "size", defaultValue = "12") int size,
-            @RequestParam(name = "sortCode", defaultValue = "0") int sortCode,
-            @RequestParam(name = "category", defaultValue = "0") Long category) {
-
-        Sort sort;
-        switch (sortCode) {
-            case 1:
-                sort = Sort.by(Sort.Direction.DESC, "likeCount");
-                break;
-            case 2:
-                sort = Sort.by(Sort.Direction.DESC, "viewCount");
-                break;
-            default:
-                sort = Sort.by(Sort.Direction.DESC, "createdDate");
-                break;
-        }
-
-        int zeroBasedPage = Math.max(0, page - 1);
-        Pageable pageable = PageRequest.of(zeroBasedPage, size, sort);
-        PostPageResponse response = postService.findAllPosts(pageable, category);
-        return ResponseEntity.ok(response);
-    }
-
-    // 전체 게시글 목록 조회
-    @GetMapping("")
+    @GetMapping({ "", "/" })
     public ResponseEntity<PostPageResponse> getAllPosts1(
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "12") int size,
@@ -88,49 +61,46 @@ public class PostController {
         PostPageResponse response = postService.findAllPosts(pageable, category);
         return ResponseEntity.ok(response);
     }
-    // 게시글 작성
-    @PostMapping(value = {"", "/"}, consumes = {"multipart/form-data"})
+
+    // [수정] 게시글 작성
+    @PostMapping(value = { "", "/" }, consumes = { "multipart/form-data" })
     public ResponseEntity<PostListResponse> createPost(
             @RequestParam("title") String title,
             @RequestParam("content") String content,
             @RequestParam("categoryId") Long categoryId,
-            @RequestPart(value = "photo", required = false) MultipartFile photo,
-            Authentication authentication) throws IOException {
+            @RequestPart(value = "photo", required = false) MultipartFile photo, // MultipartFile을 직접 받음
+            Authentication authentication) {
 
         PostCreateRequest postCreateRequest = new PostCreateRequest();
         postCreateRequest.setTitle(title);
         postCreateRequest.setContent(content);
         postCreateRequest.setCategoryId(categoryId);
-        if (photo != null && !photo.isEmpty()) {
-            postCreateRequest.setPhoto(photo.getBytes());
-        }
 
         String userId = authentication.getName();
-        PostListResponse response = postService.createPost(postCreateRequest, userId);
+        // MultipartFile을 서비스 계층으로 그대로 전달
+        PostListResponse response = postService.createPost(postCreateRequest, photo, userId);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // 게시글 수정
-    @PatchMapping(value = "/{id}", consumes = {"multipart/form-data"})
+    @PatchMapping(value = "/{id}", consumes = { "multipart/form-data" })
     public ResponseEntity<PostEditResponse> updatePost(
             @PathVariable Long id,
             @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "content", required = false) String content,
             @RequestParam(value = "categoryId", required = false) Long categoryId,
-            @RequestPart(value = "photo", required = false) MultipartFile photo,
-            Authentication authentication) throws IOException {
+            @RequestPart(value = "photo", required = false) MultipartFile photo, // MultipartFile을 직접 받음
+            Authentication authentication) {
 
         PostEditRequest postEditRequest = new PostEditRequest();
         postEditRequest.setTitle(title);
         postEditRequest.setContent(content);
         postEditRequest.setCategoryId(categoryId);
-        if (photo != null && !photo.isEmpty()) {
-            postEditRequest.setPhoto(photo.getBytes());
-        }
-        
+
         String username = authentication.getName();
-        PostEditResponse response = postService.updatePost(id, postEditRequest, username);
+        // MultipartFile을 서비스 계층으로 그대로 전달
+        PostEditResponse response = postService.updatePost(id, postEditRequest, photo, username);
 
         return ResponseEntity.ok(response);
     }

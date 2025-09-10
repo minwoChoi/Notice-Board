@@ -1,6 +1,5 @@
 package com.example.demo.repository;
 
-
 import java.util.List;
 import java.util.Optional;
 
@@ -14,14 +13,17 @@ import com.example.demo.model.User;
 
 public interface ScrapRepository extends JpaRepository<Scrap, Long> {
     boolean existsByUserAndPost(User user, Post post);
+
     Optional<Scrap> findByUserAndPost(User user, Post post);
+
     List<Scrap> findByUser(User user);
 
-    @Query("SELECT s FROM Scrap s " +
-           "JOIN FETCH s.post p " +         // 스크랩된 게시물(Post) 정보를 함께 조회
-           "JOIN FETCH p.user " +           // 해당 게시물의 작성자(User) 정보를 함께 조회
-           "WHERE s.user = :user " +
-           "ORDER BY s.createdDate DESC")
+    @Query("SELECT DISTINCT s FROM Scrap s " + // 1. DISTINCT 추가
+            "JOIN FETCH s.post p " +
+            "JOIN FETCH p.user u " +
+            "LEFT JOIN FETCH p.comments c " + // 2. 댓글 정보를 함께 가져오도록 LEFT JOIN FETCH 추가
+            "WHERE s.user = :user " +
+            "ORDER BY s.createdDate DESC")
     List<Scrap> findScrapsWithDetailsByUser(@Param("user") User user);
 
     boolean existsByPost_PostIdAndUser_UserId(Long postId, String userId);;

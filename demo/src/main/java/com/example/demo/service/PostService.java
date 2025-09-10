@@ -1,4 +1,5 @@
 package com.example.demo.service;
+import java.io.IOException;
 
 import com.example.demo.dto.comment.response.CommentResponse;
 import com.example.demo.dto.post.request.PostCreateRequest;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -48,9 +50,9 @@ public class PostService {
         return responseList;
     }
 
-    // 게시글 작성
+// [완성] 게시글 작성: DTO 변환 로직 포함
     @Transactional
-    public PostListResponse createPost(PostCreateRequest req, String userId) {
+    public PostListResponse createPost(PostCreateRequest req, MultipartFile photo, String userId) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
@@ -62,40 +64,50 @@ public class PostService {
         post.setCategory(category);
         post.setTitle(req.getTitle());
         post.setContent(req.getContent());
-        post.setPhoto(req.getPhoto());
         post.setCreatedDate(LocalDateTime.now());
         post.setLikeCount(0);
         post.setViewCount(0);
+        post.setBlocked(false); // 새로 생성된 게시물은 차단되지 않음
+
+        // 서비스 계층에서 파일 처리
+        if (photo != null && !photo.isEmpty()) {
+            try {
+                post.setPhoto(photo.getBytes());
+            } catch (IOException e) {
+                throw new RuntimeException("이미지 저장에 실패했습니다.", e);
+            }
+        }
 
         Post savedPost = postRepository.save(post);
 
-        // 서비스 계층 내에서 DTO로 변환하여 반환
-        String photoUrl = (savedPost.getPhoto() != null && savedPost.getPhoto().length > 0)
-                ? "/posts/" + savedPost.getPostId() + "/photo" : null;
-        String authorProfilePictureUrl = (user.getProfilePicture() != null && user.getProfilePicture().length > 0)
-                ? "/users/" + user.getUserId() + "/photo" : null;
+        // 컨트롤러에서 DTO를 만들던 로직을 서비스로 이동
+        String photoUrl = (savedPost.getPhoto() != null && savedPost.getPhoto().length > 0) 
+            ? "/posts/" + savedPost.getPostId() + "/photo" : null;
+            
+        String authorProfilePictureUrl = (user.getProfilePicture() != null && user.getProfilePicture().length > 0) 
+            ? "/users/" + user.getUserId() + "/photo" : null;
 
         return new PostListResponse(
-                savedPost.getPostId(),
-                user.getUserId(),
-                category.getCategoryId(),
-                category.getCategoryName(),
-                savedPost.getTitle(),
-                savedPost.getContent(),
-                user.getNickname(),
-                savedPost.getCreatedDate(),
-                savedPost.getViewCount(),
-                savedPost.getLikeCount(),
-                0L, // 새 글이므로 댓글 수는 0
-                savedPost.isBlocked(),
-                photoUrl,
-                authorProfilePictureUrl
+            savedPost.getPostId(),
+            savedPost.getUser().getUserId(),
+            savedPost.getCategory().getCategoryId(),
+            savedPost.getCategory().getCategoryName(),
+            savedPost.getTitle(),
+            savedPost.getContent(),
+            savedPost.getUser().getNickname(),
+            savedPost.getCreatedDate(),
+            savedPost.getViewCount(),
+            savedPost.getLikeCount(),
+            0L, // 새 게시물이므로 댓글 수는 0
+            savedPost.isBlocked(),
+            photoUrl,
+            authorProfilePictureUrl
         );
     }
 
-    // 게시글 업데이트
+    // [완성] 게시글 수정: DTO 변환 로직 포함
     @Transactional
-    public PostEditResponse updatePost(Long postId, PostEditRequest request, String username) {
+    public PostEditResponse updatePost(Long postId, PostEditRequest request, MultipartFile photo, String username) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
 
@@ -103,36 +115,49 @@ public class PostService {
             throw new SecurityException("이 게시물의 작성자가 아닙니다.");
         }
 
+        // DTO의 필드가 null이 아닐 경우에만 게시물 정보 업데이트
         if (request.getCategoryId() != null) {
             Category category = categoryRepository.findById(request.getCategoryId())
                     .orElseThrow(() -> new IllegalArgumentException("Category not found: " + request.getCategoryId()));
             post.setCategory(category);
         }
-        if (request.getTitle() != null)
+        if (request.getTitle() != null) {
             post.setTitle(request.getTitle());
-        if (request.getContent() != null)
+        }
+        if (request.getContent() != null) {
             post.setContent(request.getContent());
-        if (request.getPhoto() != null)
-            post.setPhoto(request.getPhoto());
+        }
 
+        // 서비스 계층에서 파일 처리 (새로운 사진이 있을 경우에만)
+        if (photo != null && !photo.isEmpty()) {
+            try {
+                post.setPhoto(photo.getBytes());
+            } catch (IOException e) {
+                throw new RuntimeException("이미지 저장에 실패했습니다.", e);
+            }
+        }
+        
         Post updatedPost = postRepository.save(post);
+        String photoUrl = null;
+        if (updatedPost.getPhoto() != null && updatedPost.getPhoto().length > 0) {
+            photoUrl = "/posts/" + updatedPost.getPostId() + "/photo";
+        }
+        // 컨트롤러에서 DTO를 만들던 로직을 서비스로 이동
+        PostEditResponse responseDto = new PostEditResponse();
+        responseDto.setPostId(updatedPost.getPostId());
+        responseDto.setCategoryId(updatedPost.getCategory().getCategoryId());
+        responseDto.setCategoryName(updatedPost.getCategory().getCategoryName());
+        responseDto.setTitle(updatedPost.getTitle());
+        responseDto.setContent(updatedPost.getContent());
+        responseDto.setPhotoUrl(photoUrl);
+        responseDto.setUsername(updatedPost.getUser().getNickname()); // 닉네임 사용
+        responseDto.setCreatedDate(updatedPost.getCreatedDate());
+        responseDto.setLikeCount(updatedPost.getLikeCount());
+        responseDto.setViewCount(updatedPost.getViewCount());
 
-        // 서비스 계층 내에서 DTO로 변환하여 반환
-        PostEditResponse response = new PostEditResponse();
-        response.setPostId(updatedPost.getPostId());
-        response.setCategoryId(updatedPost.getCategory().getCategoryId());
-        response.setCategoryName(updatedPost.getCategory().getCategoryName());
-        response.setTitle(updatedPost.getTitle());
-        response.setContent(updatedPost.getContent());
-        response.setPhoto(updatedPost.getPhoto());
-        response.setUsername(updatedPost.getUser().getName());
-        response.setCreatedDate(updatedPost.getCreatedDate());
-        response.setLikeCount(updatedPost.getLikeCount());
-        response.setViewCount(updatedPost.getViewCount());
-
-        return response;
+        return responseDto;
     }
-
+    
     // 게시물 삭제
     @Transactional
     public void deletePost(Long postId, String username) {

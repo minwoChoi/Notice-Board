@@ -12,5 +12,5 @@ public class PostEditRequest {
     
     private String content;
 
-    private byte[] photo;
+    // private String photo;
 }
