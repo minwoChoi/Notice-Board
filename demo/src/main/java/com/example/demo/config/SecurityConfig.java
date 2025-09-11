@@ -38,7 +38,8 @@ public class SecurityConfig {
         "/users/checkId", 
         "/users/checkNickname",
         "/posts/*/photo", 
-        "/users/*/photo"
+        "/users/*/photo",
+        "/notifications/stream"
     };
 
     @Bean

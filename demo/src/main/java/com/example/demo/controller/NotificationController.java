@@ -6,12 +6,19 @@ import com.example.demo.service.NotificationService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.springframework.web.bind.annotation.*;
 import com.example.demo.repository.*;
 import java.nio.file.AccessDeniedException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.springframework.http.MediaType;
+import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.springframework.security.core.Authentication;
 
 @RestController
@@ -21,7 +28,16 @@ public class NotificationController {
 
     private final NotificationService notificationService;
     private final UserRepository userRepository;
-    // 알림 목록 조회 API (GET /notifications)
+    private final ConcurrentHashMap<String, SseEmitter> emitters = new ConcurrentHashMap<>();
+
+    
+    @GetMapping(value = "/stream" , produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter subscribeNotfication(Authentication authentication) {
+        String userId = authentication.getName();
+
+        return notificationService.subscribe(userId);
+    }
+
     @GetMapping
     public ResponseEntity<List<NotificationResponse>> getNotifications(Authentication authentication) {
         String userId = authentication.getName();
