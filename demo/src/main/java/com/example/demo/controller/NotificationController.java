@@ -2,8 +2,11 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.notification.response.NotificationResponse;
 import com.example.demo.model.User;
+import com.example.demo.service.SseService;
 import com.example.demo.service.NotificationService;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -21,11 +24,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.security.core.Authentication;
 
+@Slf4j
 @RestController
 @RequestMapping("/notifications")
 @AllArgsConstructor
 public class NotificationController {
 
+    private final SseService sseService; 
     private final NotificationService notificationService;
     private final UserRepository userRepository;
     private final ConcurrentHashMap<String, SseEmitter> emitters = new ConcurrentHashMap<>();
@@ -33,9 +38,10 @@ public class NotificationController {
     
     @GetMapping(value = "/stream" , produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribeNotfication(Authentication authentication) {
+        log.info("SSE subscription request received for user: {}", authentication.getName()); // 💡 로그 추가
         String userId = authentication.getName();
 
-        return notificationService.subscribe(userId);
+        return sseService.subscribe(userId);
     }
 
     @GetMapping

@@ -1,5 +1,6 @@
-package com.example.demo.service;
 
+
+package com.example.demo.service;
 import java.util.ArrayList;
 
 import org.springframework.stereotype.Service;
@@ -24,9 +25,8 @@ public class SseService {
 
     public SseEmitter subscribe(String userId) {
         SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT); 
-
         emitterRepository.add(userId, emitter);   // 유저별 다중 연결 저장
-
+        log.info("SSE emitter created and added for user: {}", userId);
         emitter.onCompletion(() -> {
             emitterRepository.remove(userId, emitter);
         });
@@ -62,7 +62,7 @@ public class SseService {
         return emitter;
     }
 
-    private void sendToClient(Long userId, Object data) {
+    private void sendToClient(String userId, Object data) {
         Collection<SseEmitter> emitters = emitterRepository.getAll(userId);
         if (emitters == null || emitters.isEmpty()) { // emitter가 없다는 건 서버에 살아있는 SSE 객체가 없다는 뜻
             return;
