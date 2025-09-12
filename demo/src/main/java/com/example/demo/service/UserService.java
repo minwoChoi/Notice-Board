@@ -42,9 +42,9 @@ public class UserService {
         }
 
     }
-
+    
     //회원가입
-    @Transactional
+    @Transactional 
     public void register(UserReisterRequest request) {   
     
         if (userRepository.findByUserId(request.getUserId()).isPresent()) {
@@ -63,6 +63,5 @@ public class UserService {
         user.setNickname(request.getNickname());
         user.setAuthority(request.getAuthority());
         user.setProfilePicture(request.getProfilePicture());
-        userRepository.save(user);
     }
 }

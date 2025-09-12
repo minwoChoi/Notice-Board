@@ -28,4 +28,7 @@ logging:
   level:
     org:
       springframework: info
-      zerock: debug
+    com:
+      example:
+        demo:
+          service: info

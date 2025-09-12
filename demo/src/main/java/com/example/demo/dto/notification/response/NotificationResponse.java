@@ -11,13 +11,22 @@ import java.time.LocalDateTime;
 public class NotificationResponse {
     private Long notificationId;
     private String message;
-    private Boolean read;
+    private Long postId;
+    private Long commentId;
+    private Boolean read; // Boolean 타입으로 변경
     private LocalDateTime createdDate;
 
     public NotificationResponse(Notification notification) {
         this.notificationId = notification.getNotificationId();
-        this.message = notification.getMessage(); // User 모델의 meeeage 필드명을 message로 수정했다고 가정
+        this.message = notification.getMessage();
         this.read = notification.getRead();
         this.createdDate = notification.getCreatedDate();
+
+        if (notification.getPost() != null) {
+            this.postId = notification.getPost().getPostId();
+        }
+        if (notification.getComment() != null) {
+            this.commentId = notification.getComment().getCommentId();
+        }
     }
 }

@@ -1,57 +1,54 @@
-
-
 package com.example.demo.service;
-import java.util.ArrayList;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.demo.repository.EmitterRepository;
+import com.example.demo.repository.NotificationRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.example.demo.repository.EmitterRepository;
-import com.example.demo.repository.NotificationRepository;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor // Lombok이 final 필드를 포함한 생성자를 자동으로 만들어줍니다.
 @Slf4j
 public class SseService {
+
     private final NotificationRepository notificationRepository;
     private final EmitterRepository emitterRepository;
+    // ✅ Spring이 관리하는 ObjectMapper Bean을 주입받도록 변경합니다.
+    private final ObjectMapper objectMapper; 
 
-    private static final long DEFAULT_TIMEOUT = 15L * 60 * 1000; //수명
+    private static final long DEFAULT_TIMEOUT = 15L * 60 * 1000;
+
+    // ❌ private final ObjectMapper objectMapper = new ObjectMapper(); // 이 줄은 완전히 삭제합니다.
 
     public SseEmitter subscribe(String userId) {
         SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT); 
-        emitterRepository.add(userId, emitter);   // 유저별 다중 연결 저장
+        emitterRepository.add(userId, emitter);
         log.info("SSE emitter created and added for user: {}", userId);
-        emitter.onCompletion(() -> {
-            emitterRepository.remove(userId, emitter);
-        });
+
+        emitter.onCompletion(() -> emitterRepository.remove(userId, emitter));
 
         emitter.onError(e -> {
             emitterRepository.remove(userId, emitter);
-            try {
-                emitter.complete();
-            } catch (Exception ex) {
-                log.warn("[SSE] complete() after error: userId={}, emitter={}, ex={}",
-                        userId, emitter.hashCode(), ex.toString());
+            try { emitter.complete(); } 
+            catch (Exception ex) { 
+                log.warn("[SSE] complete() after error: userId={}, emitter={}, ex={}", userId, emitter.hashCode(), ex.toString());
             }
         });
 
         // 초기 이벤트(INIT)
         try {
-            emitter.send(SseEmitter.event()
-                    .name("INIT")
-                    .id(userId + "_" + System.currentTimeMillis())
-                    .data("ok"));
+            emitter.send(SseEmitter.event().name("INIT").id(userId + "_" + System.currentTimeMillis()).data("ok"));
         } catch (IOException e) {
             emitterRepository.remove(userId, emitter);
             emitter.completeWithError(e);
         }
-        // 연결 확인을 위한 Ping
+        // 연결 확인용 Ping
         try {
             emitter.send(SseEmitter.event().name("PING").data("ping"));
         } catch (IOException ignore) {
@@ -62,39 +59,38 @@ public class SseService {
         return emitter;
     }
 
-    private void sendToClient(String userId, Object data) {
+    public void sendToClient(String userId, Object data) {
         Collection<SseEmitter> emitters = emitterRepository.getAll(userId);
-        if (emitters == null || emitters.isEmpty()) { // emitter가 없다는 건 서버에 살아있는 SSE 객체가 없다는 뜻
+        if (emitters == null || emitters.isEmpty()) {
+            log.debug("[SSE] No emitters found for userId={}", userId);
             return;
         }
 
         String eventId = userId + "_" + System.currentTimeMillis();
-        log.debug("[SSE] send start: userId={}, eventId={}, targets={}", userId, eventId, emitters.size());
+        String jsonData;
+        try {
+            // 이제 이 objectMapper는 LocalDateTime을 처리할 줄 아는 똑똑한 객체입니다.
+            jsonData = objectMapper.writeValueAsString(data);
+            log.info("[SSE] JSON to send: {}", jsonData);
+        } catch (Exception e) {
+            log.error("[SSE] Serialization error", e);
+            return;
+        }
 
-        // 복수 연결 (여러 탭과 같은)
         for (SseEmitter emitter : new ArrayList<>(emitters)) {
-            int emitterCode = System.identityHashCode(emitter); // 로그용
+            int emitterCode = System.identityHashCode(emitter);
             try {
                 emitter.send(SseEmitter.event()
-                        .name("notice")  // 클라이언트에서 이벤트 이름으로 구독
+                        .name("notification")
                         .id(eventId)
-                        .data(data));     
-                log.trace("[SSE] sent to emitter={}", emitterCode);
+                        .data(jsonData)); 
+                log.info("[SSE] Notification sent successfully: userId={}, emitter={}", userId, emitterCode);
             } catch (IOException ex) {
                 log.warn("[SSE] send failed: userId={}, eventId={}, emitter={}, ex={}: {}",
                         userId, eventId, emitterCode, ex.getClass().getSimpleName(), ex.getMessage());
                 emitterRepository.remove(userId, emitter);
-                // emitter 닫기 
-                try {
-                    emitter.complete();
-                } catch (Exception closeEx) {
-                    log.debug("[SSE] complete() after send fail threw: emitter={}, ex={}",
-                            emitterCode, closeEx.toString());
-                }
+                try { emitter.complete(); } catch (Exception closeEx) { }
             }
         }
     }
-
 }
-
-//https://sy-hj08.tistory.com/49

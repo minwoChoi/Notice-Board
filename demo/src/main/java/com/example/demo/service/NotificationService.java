@@ -24,7 +24,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
-
+    private final SseService sseService;
     /**
      * 사용자의 모든 알림 목록을 조회합니다.
      * 
@@ -92,6 +92,7 @@ public class NotificationService {
 
         // 알림 생성 후 실시간 SSE 전송
         NotificationResponse response = new NotificationResponse(notification);
+        sseService.sendToClient(userTo.getUserId(), response); // 실시간 전송
         // NotificationController의 sendEventToUser 호출 필요 (또는 이벤트 발행 통해 연결)
         // 예: notificationController.sendEventToUser(userTo.getUserId(), response);
     }
