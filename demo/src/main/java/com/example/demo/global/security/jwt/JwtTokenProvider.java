@@ -27,8 +27,8 @@ public class JwtTokenProvider {
     private final Key key;
 
     public static final String GRANT_TYPE = "Bearer";
-    public static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 10 ; // 30초
-    public static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 10 ; // 1분
+    public static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 15 ; // 15초
+    public static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 60 ; // 60분
 
     // ▼▼▼ 변경된 부분: RedisDao 의존성 제거 ▼▼▼
     public JwtTokenProvider(@Value("${jwt.secret}") String secretKey) {

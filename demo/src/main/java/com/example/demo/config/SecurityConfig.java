@@ -3,6 +3,7 @@ package com.example.demo.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -52,6 +53,11 @@ public class SecurityConfig {
             .formLogin(f -> f.disable())
             .logout(l -> l.disable())
 
+            .exceptionHandling(e -> e.authenticationEntryPoint((request, response, authException) -> {
+                response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            }))
+
+
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/users/").permitAll()
@@ -77,12 +83,13 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.addAllowedOriginPattern("http://localhost:3000");
+        configuration.addAllowedOriginPattern("http://192.168.0.101"); 
         configuration.addAllowedOriginPattern("http://127.0.0.1:3000");
-        configuration.addAllowedOriginPattern("http://192.168.0.166:3000");
-        configuration.addAllowedOriginPattern("http://192.168.0.166");
-        // 요청하신 IP 주소도 CORS 허용 목록에 추가하는 것이 좋습니다.
-        configuration.addAllowedOriginPattern("http://192.168.0.172:8088");
-        configuration.addAllowedOriginPattern("http://192.168.0.172:8080");
+        // configuration.addAllowedOriginPattern("http://192.168.0.166:3000");
+        // configuration.addAllowedOriginPattern("http://192.168.0.166");
+        // // 요청하신 IP 주소도 CORS 허용 목록에 추가하는 것이 좋습니다.
+        // configuration.addAllowedOriginPattern("http://192.168.0.172:8088");
+        // configuration.addAllowedOriginPattern("http://192.168.0.172:8080");
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
         configuration.setAllowCredentials(true);
