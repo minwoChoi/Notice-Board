@@ -27,8 +27,8 @@ public class JwtTokenProvider {
     private final Key key;
 
     public static final String GRANT_TYPE = "Bearer";
-    public static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 10 ; // 30초
-    public static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 10 ; // 1분
+    public static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 ; // 5분
+    public static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60; // 60분
 
     // ▼▼▼ 변경된 부분: RedisDao 의존성 제거 ▼▼▼
     public JwtTokenProvider(@Value("${jwt.secret}") String secretKey) {
@@ -51,7 +51,7 @@ public class JwtTokenProvider {
 
         // RefreshToken 생성
         Date refreshTokenExpire = new Date(now + REFRESH_TOKEN_EXPIRE_TIME);
-        String refreshToken = generateRefreshToken(username, refreshTokenExpire);
+        String refreshToken = generateRefreshToken(username, authorities, refreshTokenExpire);
 
         // ▼▼▼ 변경된 부분: 생성된 토큰들을 클라이언트에게 모두 전달 ▼▼▼
         return JwtToken.builder()
@@ -155,9 +155,11 @@ public class JwtTokenProvider {
     }
 
     /** RefreshToken 생성 */
-    private String generateRefreshToken(String username, Date expireDate) {
+    private String generateRefreshToken(String username, String authorities, Date expireDate) {
         return Jwts.builder()
                 .setSubject(username)
+                // ▼▼▼ [수정 3] 여기에 auth 클레임 추가 ▼▼▼
+                .claim("auth", authorities)
                 .setIssuedAt(new Date())
                 .setExpiration(expireDate)
                 .signWith(key, SignatureAlgorithm.HS256)

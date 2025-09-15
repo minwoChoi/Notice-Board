@@ -96,38 +96,57 @@ public class AuthController {
     ) {
         String refreshToken;
         boolean isAppClient = false;
+        String clientType = "Web"; // 로그용 클라이언트 타입 변수
 
+        // 1. 토큰 추출
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             refreshToken = bearerToken.substring(7);
             isAppClient = true;
+            clientType = "App"; // 클라이언트 타입 변경
         } else if (StringUtils.hasText(refreshTokenFromCookie)) {
             refreshToken = refreshTokenFromCookie;
         } else {
+            // ▼▼▼ 실패 로그 1: 토큰이 아예 없는 경우
+            log.warn("[토큰 재발급 실패] 요청에 리프레시 토큰이 없습니다. (Header, Cookie 모두 없음)");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token is missing.");
         }
         
+        // 2. 토큰 유효성 검증
         if (!jwtTokenProvider.validateToken(refreshToken)) {
+            // ▼▼▼ 실패 로그 2: 토큰이 유효하지 않은 경우
+            log.warn("[토큰 재발급 실패] 유효하지 않은 리프레시 토큰입니다. Token: {}", refreshToken);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token.");
         }
 
+        // 3. 토큰에서 사용자 정보 추출 및 DB 조회
         String userId = jwtTokenProvider.getUserNameFromToken(refreshToken);
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElse(null); // orElseThrow 대신 orElse(null)로 변경하여 직접 처리
+
+        if (user == null) {
+            // ▼▼▼ 실패 로그 3: 토큰은 유효하지만 해당 유저가 DB에 없는 경우
+            log.error("[토큰 재발급 실패] 토큰의 사용자 정보를 DB에서 찾을 수 없습니다. UserId: {}", userId);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User from token not found.");
+        }
+        
+        // 4. 새 토큰 생성
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 user.getUserId(), null, List.of(new SimpleGrantedAuthority("ROLE_USER"))
         );
         JwtToken newJwtToken = jwtTokenProvider.generateToken(authentication);
 
+        // ▼▼▼ 성공 로그 ▼▼▼
+        log.info("[토큰 재발급 성공] 사용자: '{}', 클라이언트 타입: {}", userId, clientType);
+
+        // 5. 클라이언트 타입에 따라 응답 분기
         if (isAppClient) {
             return ResponseEntity.ok(newJwtToken);
         } else {
-            // 👇 3. addHeader를 사용하여 쿠키를 응답에 추가합니다.
             response.addHeader("Set-Cookie", createCookieHeader("accessToken", newJwtToken.getAccessToken(), (int) (JwtTokenProvider.ACCESS_TOKEN_EXPIRE_TIME / 1000)));
             response.addHeader("Set-Cookie", createCookieHeader("refreshToken", newJwtToken.getRefreshToken(), (int) (JwtTokenProvider.REFRESH_TOKEN_EXPIRE_TIME / 1000)));
             return ResponseEntity.ok().build();
         }
     }
-
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         String authHeader = request.getHeader("Authorization");

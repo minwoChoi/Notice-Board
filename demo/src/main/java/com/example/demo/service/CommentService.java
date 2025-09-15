@@ -144,7 +144,8 @@ public class CommentService {
             comment.increaseLikeCount();
             // @Transactional에 의해 자동 저장되므로 save 호출 불필요
 
-            if (!user.equals(comment.getUser())) {
+            if (!user.getUserId().equals(comment.getUser().getUserId())) {
+
                 String message = user.getNickname() + "님이 회원님의 댓글을 추천했습니다.";
                 notificationService.createNotification(comment.getUser(), message, comment.getPost(), comment);
             }

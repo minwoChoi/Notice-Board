@@ -3,9 +3,9 @@ package com.example.demo.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,7 +27,6 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
 
-    // 모든 공개 허용 URL 한데 모음
     private static final String[] PUBLIC_URLS = {
         "/auth/login",
         "/auth/reissue",
@@ -38,8 +37,7 @@ public class SecurityConfig {
         "/users/checkId", 
         "/users/checkNickname",
         "/posts/*/photo", 
-        "/users/*/photo",
-        "/notifications/stream"
+        "/users/*/photo"
     };
 
     @Bean
@@ -52,15 +50,28 @@ public class SecurityConfig {
             .formLogin(f -> f.disable())
             .logout(l -> l.disable())
 
+            .exceptionHandling(e -> e.authenticationEntryPoint((request, response, authException) -> {
+                response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            }))
+            
+            // ==========================================================
+            // ★★★ 권한 규칙 순서 조정 (더 구체적인 규칙을 위로) ★★★
+            // ==========================================================
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/users/").permitAll()
-                .requestMatchers(PUBLIC_URLS).permitAll()
-                .requestMatchers(HttpMethod.GET, "/posts/**").permitAll() 
+                // 1. 인증 및 권한이 필요한 API들을 먼저 정의합니다.
                 .requestMatchers("/users/me/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/reports/posts/**").permitAll()
-                .requestMatchers("/members/role").hasRole("USER")
-                .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/reports/posts/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/reports/posts/**").authenticated()
+                .requestMatchers("/users/role").hasAuthority("ROLE_USER") 
+                .requestMatchers(HttpMethod.DELETE, "/admin/users/**").hasAuthority("ROLE_ADMIN")
+
+                // 2. 그 외 모든 사람이 접근 가능한 공개 API들을 정의합니다.
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/users").permitAll() // 회원가입
+                .requestMatchers(PUBLIC_URLS).permitAll()
+                .requestMatchers(HttpMethod.GET, "/posts/**").permitAll() // 게시글 조회
+
+                // 3. 위에서 정의하지 않은 나머지 모든 요청은 인증이 필요하도록 설정합니다.
                 .anyRequest().authenticated()
             )
             .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
@@ -76,13 +87,20 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        
+        // 로컬 개발 환경용 (유지)
         configuration.addAllowedOriginPattern("http://localhost:3000");
-        configuration.addAllowedOriginPattern("http://127.0.0.1:3000");
         configuration.addAllowedOriginPattern("http://192.168.0.166:3000");
-        configuration.addAllowedOriginPattern("http://192.168.0.166");
-        // 요청하신 IP 주소도 CORS 허용 목록에 추가하는 것이 좋습니다.
-        configuration.addAllowedOriginPattern("http://192.168.0.172:8088");
+        
+        // 배포 서버 IP
+        configuration.addAllowedOriginPattern("http://192.168.0.101");
+
+        // 이전에 사용했던 개발용 IP (필요 없다면 보안을 위해 제거하는 것이 좋습니다)
         configuration.addAllowedOriginPattern("http://192.168.0.172:8080");
+
+
+
+        
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
         configuration.setAllowCredentials(true);
