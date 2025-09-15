@@ -24,7 +24,6 @@ public class SseService {
 
     private static final long DEFAULT_TIMEOUT = 15L * 60 * 1000;
 
-    // ❌ private final ObjectMapper objectMapper = new ObjectMapper(); // 이 줄은 완전히 삭제합니다.
 
     public SseEmitter subscribe(String userId) {
         SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT); 
