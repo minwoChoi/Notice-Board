@@ -1,5 +1,6 @@
 package com.example.demo.repository;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
@@ -9,6 +10,7 @@ import java.time.Duration;
 
 // Redis 데이터 접근을 위한 클래스
 @Component
+@Profile("!prod")
 public class RedisDao {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ValueOperations<String, Object> values;
