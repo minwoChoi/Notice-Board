@@ -100,6 +100,8 @@ public class SecurityConfig {
 
         // 4. 배포 서버 IP (유지)
         configuration.addAllowedOriginPattern("http://192.168.0.101");
+        configuration.addAllowedOriginPattern("https://192.168.0.101");
+
 
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
