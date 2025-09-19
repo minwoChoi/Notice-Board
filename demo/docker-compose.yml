@@ -4,7 +4,6 @@ services:
   db:
     image: postgres:15
     container_name: eg-postgres-db
-    # .env 파일의 변수를 사용하도록 변경합니다.
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -15,12 +14,6 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./init-category.sql:/docker-entrypoint-initdb.d/init-category.sql
 
-  redis:
-    image: redis:7-alpine
-    container_name: eg-redis
-    ports:
-      - "6379:6379"
-
   spring-boot-app:
     build:
       context: .
@@ -28,13 +21,11 @@ services:
     container_name: eg-spring-app
     ports:
       - "8080:8080"
-    # .env 파일을 읽어 컨테이너에 환경 변수로 주입합니다.
-    
     env_file:
       - .env
     depends_on:
       - db
-      - redis
+    restart: unless-stopped
 
 volumes:
   pgdata:

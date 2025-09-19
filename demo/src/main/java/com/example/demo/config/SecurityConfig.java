@@ -45,7 +45,7 @@ public class SecurityConfig {
         http
                 .httpBasic(b -> b.disable())
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                //.cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .formLogin(f -> f.disable())
                 .logout(l -> l.disable())
@@ -101,7 +101,9 @@ public class SecurityConfig {
         // 4. 배포 서버 IP (유지)
         configuration.addAllowedOriginPattern("http://192.168.0.101");
         configuration.addAllowedOriginPattern("https://192.168.0.101");
-
+        // configuration.addAllowedOriginPattern("http://localhost");
+        // configuration.addAllowedOriginPattern("https://localhost");
+        configuration.addAllowedOriginPattern("https://test.egtronics-ev.com");
 
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
